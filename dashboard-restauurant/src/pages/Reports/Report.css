@@ -1,0 +1,32 @@
+.table-horizontal {
+  display: flex;              /* các cột nằm ngang */
+  flex-wrap: nowrap;          /* không xuống dòng */
+  gap: 10px;                  /* khoảng cách giữa các cột */
+  overflow-x: auto;           /* cho cuộn ngang nếu nhiều */
+  padding: 10px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;     /* th trên, td dưới */
+  align-items: center;
+  min-width: 80px;
+  padding: 10px;
+
+}
+
+.col th {
+  font-weight: bold;
+  margin-bottom: 6px;
+  background-color: white;
+  width: 100%;
+  text-align: center;
+  padding: 5px 0;
+  border-bottom: 1px solid black;
+}
+
+.col td {
+  text-align: center;
+  width: 100%;
+  padding: 5px 0;
+}
