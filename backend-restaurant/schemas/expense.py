@@ -44,3 +44,19 @@ class ExpenseItemRead(ExpenseItemBase):
 
     class Config:
         orm_mode = True
+
+
+class ExpenseItemUpdate(BaseModel):
+    # All fields optional for partial update
+    date: Optional[date] = None
+    ha: Optional[float] = None
+    ga: Optional[float] = None
+    gao: Optional[float] = None
+    cho: Optional[float] = None
+    kho: Optional[float] = None
+    gas: Optional[float] = None
+    dau: Optional[float] = None
+    trung: Optional[float] = None
+    hop: Optional[float] = None
+    luong: Optional[float] = None
+    khac: Optional[float] = None
