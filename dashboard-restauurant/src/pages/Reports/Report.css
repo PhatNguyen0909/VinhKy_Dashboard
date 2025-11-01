@@ -1,7 +1,7 @@
 .table-horizontal {
   display: flex;              /* các cột nằm ngang */
   flex-wrap: nowrap;          /* không xuống dòng */
-  gap: 10px;                  /* khoảng cách giữa các cột */
+  gap: 33px;                  /* khoảng cách giữa các cột */
   overflow-x: auto;           /* cho cuộn ngang nếu nhiều */
   padding: 10px;
 }
@@ -29,4 +29,35 @@
   text-align: center;
   width: 100%;
   padding: 5px 0;
+}
+.dashboard-container{
+  max-width: 100%;
+}
+/* Responsive tweaks for <= 900px */
+@media (max-width: 900px) {
+  .table-horizontal {
+    gap: 6px;
+    padding: 6px;
+  }
+  .col {
+    min-width: 70px;
+    padding: 6px;
+  }
+  .col th {
+    font-size: 12px;
+    padding: 4px 0;
+  }
+  .col td {
+    font-size: 12px;
+    padding: 4px 0;
+  }
+}
+.table-horizontal .col th{
+  background-color: #fff !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 5px 0 !important;
+}
+.table-horizontal .col td{
+  border-bottom: none !important;
+  padding: 5px 0 !important;
 }

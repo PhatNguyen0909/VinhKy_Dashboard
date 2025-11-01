@@ -9,6 +9,7 @@ from schemas.expense import (
     ExpenseRead,
     ExpenseItemCreate,
     ExpenseItemRead,
+    ExpenseItemUpdate,
 )
 from repositories import expense_repo
 from services import expense_service
@@ -59,3 +60,13 @@ def get_item(item_id: int, db: Session = Depends(get_db)):
     if not it:
         raise HTTPException(status_code=404, detail="Expense item not found")
     return it
+
+
+@router.patch("/expense_items/{item_id}", response_model=ExpenseItemRead)
+def patch_item(item_id: int, payload: ExpenseItemUpdate, db: Session = Depends(get_db)):
+    # Partial update behaves the same as our PUT implementation: apply only provided fields
+    updates = payload.dict(exclude_unset=True)
+    updated = expense_service.update_expense_item(db, item_id, updates)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Expense item not found")
+    return updated

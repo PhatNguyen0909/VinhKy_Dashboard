@@ -1,24 +1,78 @@
-.sidebar {
-	width: 120px;
-	background: #f4f4f4;
-	padding: 20px 10px;
-	border-radius: 8px;
+.sidebar{
+    /* animated border settings */
+    --border-width: 3px;            /* thickness of the animated border */
+    --c1: #f0b489;                  /* first color */
+    --c2: #7ed5f0;                  /* second color */
+    --spin-duration: 4s;            /* speed of rotation */
+    background-color: white;
+    padding:10px;
+    display: flex;
+    gap:30px;
+    border-radius: 10px;
+    /* Center items within the navbar */
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    isolation: isolate; /* ensure pseudo-element layers correctly */
 }
-.sidebar h2 {
-	font-size: 1.2rem;
-	margin-bottom: 12px;
+/* Inline icons: layout and spacing */
+.sidebar .nav-link{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    position: relative;
+    z-index: 1; /* above animated border */
 }
-.sidebar ul {
-	list-style: none;
-	padding: 0;
+.sidebar .nav-link:hover{
+    background: rgba(0,0,0,0.04);
 }
-.sidebar li {
-	margin-bottom: 10px;
-	cursor: pointer;
-	padding: 4px 0;
-	border-radius: 4px;
-	transition: background 0.2s;
+.sidebar .nav-icon{ width: 18px; height: 18px; color: #1677ff; }
+.sidebar .nav-text{ font-weight: 500; }
+/* Scope link styles to the navbar and fix hover selector */
+.sidebar a,
+.sidebar a.active,
+.sidebar a:hover{
+    color: black;
+    text-decoration: none;
 }
-.sidebar li:hover {
-	background: #e0e0e0;
+
+/* Animated two-color rotating border */
+/* Register animatable custom property for angle so gradient can move */
+@property --angle{
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+.sidebar::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    /* Move colors ALONG the border by animating the gradient start angle */
+    background: conic-gradient(from var(--angle),
+        var(--c1) 0 25%,
+        var(--c2) 0 50%,
+        var(--c1) 0 75%,
+        var(--c2) 0 100%
+    );
+    animation: sidebar-hue-run var(--spin-duration) linear infinite;
+    /* Show only the border ring using masking; border width = padding */
+    padding: var(--border-width);
+    /* Standard + WebKit masks to carve the inner area (show only border) */
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; /* Safari/WebKit */
+            mask-composite: exclude; /* Standard */
+    pointer-events: none; /* keep edges clickable */
+}
+
+@keyframes sidebar-hue-run{
+    to { --angle: 1turn; }
 }
