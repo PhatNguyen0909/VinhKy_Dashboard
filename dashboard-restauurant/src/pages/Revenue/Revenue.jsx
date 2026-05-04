@@ -112,7 +112,7 @@ function Revenue() {
             <input
               type="number"
               min="0"
-              step="1000"
+              step="10"
               placeholder="0"
               value={chuyenKhoan}
               onChange={(e) => setChuyenKhoan(e.target.value)}

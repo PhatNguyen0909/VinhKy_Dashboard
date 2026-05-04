@@ -31,5 +31,14 @@ app = create_app()
 
 @app.on_event("startup")
 def on_startup():
-    # create sqlite file dir if needed and create tables
     Base.metadata.create_all(bind=engine)
+
+
+# --------------------------------------------------
+# 👉 Thêm block này để chạy local OPTIONAL
+# Railway / Render sẽ ignore vì họ tự chạy uvicorn
+# --------------------------------------------------
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)

@@ -242,55 +242,6 @@ function Dashboard() {
 	return (
 			<div className="dashboard-container">
 				<div className="page-grid">
-					{/* Left column: Monthly list */}
-					<div className="col-left">
-						<h3>📋 Danh sách chi tiêu theo tháng</h3>
-						<div className="expense-list scroll-panel">
-							{monthEntries.length === 0 ? (
-								<p>Chưa có dữ liệu</p>
-							) : (
-								<ul className="expense-collapsible-list" style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
-									{monthEntries.map((m, idx) => (
-										<li key={m.month} className="expense-collapsible-item" style={{ marginBottom: 12 }}>
-											<div
-												className="expense-collapsible-header"
-												onClick={() => toggleOpenMonth(idx)}
-												style={{ cursor: 'pointer', fontWeight: 'bold', borderBottom: '1px solid #ccc', textAlign: 'center', padding: 8 }}
-											>
-												{m.month} — Tổng: {formatNumber(m.total)}
-											</div>
-											{openMonthIdx === idx && (
-												<div className="expense-collapsible-body" style={{ paddingTop: 8 }}>
-													<table style={{ maxWidth: '100%' }}>
-														<thead>
-															<tr>
-																<th>Ngày</th>
-																<th>Tổng tiền</th>
-															</tr>
-														</thead>
-														<tbody>
-															{m.days.map((d, i) => (
-																<tr key={`${d.date}-${i}`}>
-																	<td>{d.date}</td>
-																	<td>{formatNumber(d.amount)}</td>
-																</tr>
-															))}
-														</tbody>
-														<tfoot>
-															<tr>
-																<td style={{ fontWeight: 600 }}>Tổng tháng</td>
-																<td style={{ fontWeight: 600 }}>{formatNumber(m.total)}</td>
-															</tr>
-														</tfoot>
-													</table>
-												</div>
-											)}
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
-					</div>
 
 					{/* Center column: Form with two-column inputs */}
 					<div className="col-center">
@@ -303,53 +254,103 @@ function Dashboard() {
 								</div>
 								<div className="form-field">
 									<label>Tiền Nhà:</label>
-									<input placeholder="0" value={tienNha} onChange={(e) => setTienNha(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienNha} onChange={(e) => setTienNha(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Gạo:</label>
-									<input placeholder="0" value={tienGao} onChange={(e) => setTienGao(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienGao} onChange={(e) => setTienGao(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Chợ:</label>
-									<input placeholder="0" value={tienCho} onChange={(e) => setTienCho(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienCho} onChange={(e) => setTienCho(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Khô:</label>
-									<input placeholder="0" value={tienKho} onChange={(e) => setTienKho(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienKho} onChange={(e) => setTienKho(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Gas:</label>
-									<input placeholder="0" value={tienGas} onChange={(e) => setTienGas(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienGas} onChange={(e) => setTienGas(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Dầu:</label>
-									<input placeholder="0" value={tienDau} onChange={(e) => setTienDau(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienDau} onChange={(e) => setTienDau(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Trứng:</label>
-									<input placeholder="0" value={tienTrung} onChange={(e) => setTienTrung(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienTrung} onChange={(e) => setTienTrung(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Hộp:</label>
-									<input placeholder="0" value={tienHop} onChange={(e) => setTienHop(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienHop} onChange={(e) => setTienHop(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Lương:</label>
-									<input placeholder="0" value={tienLuong} onChange={(e) => setTienLuong(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienLuong} onChange={(e) => setTienLuong(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Gà:</label>
-									<input placeholder="0" value={tienGa} onChange={(e) => setTienGa(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienGa} onChange={(e) => setTienGa(e.target.value)} />
 								</div>
 								<div className="form-field">
 									<label>Tiền Khác:</label>
-									<input placeholder="0" value={tienKhac} onChange={(e) => setTienKhac(e.target.value)} />
+									<input type="number" min="0" step="1000" placeholder="0" value={tienKhac} onChange={(e) => setTienKhac(e.target.value)} />
 								</div>
 								<div className="form-actions">
 									<button type="button" onClick={handleSubmit}>Thêm</button>
 								</div>
 							</div>
-						</form>
+							</form>
+
+							{/* Danh sách chi tiêu (đưa xuống dưới form) */}
+					<div style={{ marginTop: 18, width: '100%' }}>
+								<h3>📋 Dan sách chi tiêu theo tháng</h3>
+								<div className="expense-list scroll-panel">
+									{monthEntries.length === 0 ? (
+										<p>Chưa có dữ liệu</p>
+									) : (
+										<ul className="expense-collapsible-list" style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+											{monthEntries.map((m, idx) => (
+												<li key={m.month} className="expense-collapsible-item" style={{ marginBottom: 12 }}>
+													<div
+														className="expense-collapsible-header"
+														onClick={() => toggleOpenMonth(idx)}
+														style={{ cursor: 'pointer', fontWeight: 'bold', borderBottom: '1px solid #ccc', textAlign: 'center', padding: 8 }}
+													>
+														{m.month} — Tổng: {formatNumber(m.total)}
+													</div>
+															{openMonthIdx === idx && (
+																<div className="expense-collapsible-body" style={{ paddingTop: 8 }}>
+																	<table style={{ maxWidth: '100%' }}>
+																		<thead>
+																			<tr>
+																				<th>Ngày</th>
+																				<th>Tổng tiền</th>
+																			</tr>
+																		</thead>
+																		<tbody>
+																			{m.days.map((d, i) => (
+																				<tr key={`${d.date}-${i}`}>
+																					<td>{d.date}</td>
+																					<td>{formatNumber(d.amount)}</td>
+																				</tr>
+																			))}
+																		</tbody>
+																		<tfoot>
+																			<tr>
+																				<td style={{ fontWeight: 600 }}>Tổng tháng</td>
+																				<td style={{ fontWeight: 600 }}>{formatNumber(m.total)}</td>
+																			</tr>
+																		</tfoot>
+																	</table>
+																</div>
+															)}
+												</li>
+											))}
+										</ul>
+												)}
+								</div>
+							</div>
 					</div>
 
 					{/* Right column: Calendar and day selection */}

@@ -1,14 +1,16 @@
 
 .small-form {
-	max-width: 100%;
+	/* Keep the form card compact and app-like */
+	max-width: 480px;
+	width: 100%;
 	margin: 0 auto;
-	padding: 12px;
+	padding: 14px;
 	background: var(--card-bg);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow-sm);
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 10px;
 }
 
 .expense-table {
@@ -48,11 +50,10 @@
 	
 }
 .expense-form {
-    display: flex;
+	display: flex;
 	gap: 8px;
 	margin-bottom: 20px;
-    justify-content: space-between;
-    flex-direction: column;
+	flex-direction: column;
 }
 .expense-form input{
     font-size: 1.1rem;
@@ -86,13 +87,14 @@
 .expense-table th{ border-bottom: 2px solid var(--border); text-align: center; }
 .expense-table td{ border-bottom: 1px solid var(--border); text-align: center; }
 
-/* 3-column page layout */
+/* 3-column page layout -> stack vertically */
 .page-grid{
 	display: flex;
+	flex-direction: column;
 	align-items: start;
 	gap: 16px;
 }
-.page-grid > *{ flex: 1 1 0; }
+.page-grid > *{ width: 100%; }
 .scroll-panel{
 	max-height: 70vh;
 	overflow: auto;
@@ -118,15 +120,31 @@
 /* Two-column form grid */
 .form-grid{
 	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 10px 12px;
+	/* Stack fields vertically for simpler mobile/app-like layout */
+	grid-template-columns: 1fr;
+	gap: 10px;
+}
+.col-center{ 
+	display: flex; 
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+}
+.col-center .small-form{ width: 100%; }
+
+/* Make form two-column only on very wide screens if desired */
+@media (min-width: 1400px) {
+	.form-grid{ grid-template-columns: 1fr 1fr; gap: 12px 16px; }
 }
 .form-field{
 	display: flex;
 	flex-direction: column;
+	background: rgba(255,255,255,0.02);
+	padding: 8px;
+	border-radius: 8px;
 }
-.form-field label{ font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-.form-field input{ width: 100%; }
+.form-field label{ font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.form-field input{ width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #e6e6e6; }
 .form-actions{ grid-column: 1 / -1; display: flex; justify-content: center; }
 
 /* Calendar base styles */
