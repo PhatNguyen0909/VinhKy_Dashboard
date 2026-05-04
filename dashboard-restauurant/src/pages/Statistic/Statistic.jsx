@@ -13,7 +13,7 @@ import './Statistic.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const API_URL = 'http://127.0.0.1:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://vinhky-dashboard-1.onrender.com/api';
 
 function Statistic() {
   const today = new Date();
