@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './Report.css';
 
 function Report() {
-  const API_URL = 'https://vinhky-dashboard-1.onrender.com/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://vinhky-dashboard-1.onrender.com/api';
 
   // 1) Fetch tất cả expense items 1 lần
   const [allItems, setAllItems] = useState([]);

@@ -96,7 +96,7 @@ function Dashboard() {
 	const [tienGa, setTienGa] = useState('');
 	const [tienKhac, setTienKhac] = useState('');
 
-	const API_URL = 'https://vinhky-dashboard-1.onrender.com/api';
+	const API_URL = import.meta.env.VITE_API_URL || 'https://vinhky-dashboard-1.onrender.com/api';
 
 	// 🔹 Lấy dữ liệu từ backend
 	const loadData = async () => {

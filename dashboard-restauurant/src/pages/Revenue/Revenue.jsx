@@ -30,7 +30,7 @@ function Revenue() {
     setTienMat('0');
   };
 
-  const API_URL = 'https://vinhky-dashboard-1.onrender.com/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://vinhky-dashboard-1.onrender.com/api';
 
   // Tải dữ liệu doanh thu theo ngày (nếu đã có) để điền vào form
   useEffect(() => {
