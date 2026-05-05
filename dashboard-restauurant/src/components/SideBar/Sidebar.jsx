@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import './Sidebar.css';
+import './SideBar.css';
 
 // Inline SVG icons (no extra assets needed)
 const IconAdd = (props) => (
