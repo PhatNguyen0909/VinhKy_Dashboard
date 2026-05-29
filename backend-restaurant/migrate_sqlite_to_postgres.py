@@ -26,9 +26,15 @@ def _resolve_target_url() -> str:
 
 def _normalize_url(database_url: str) -> str:
     if database_url.startswith("postgres://"):
-        return database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+        database_url = database_url.replace(
+            "postgres://", "postgresql+psycopg2://", 1)
     if database_url.startswith("postgresql://") and "+psycopg2" not in database_url:
-        return database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        database_url = database_url.replace(
+            "postgresql://", "postgresql+psycopg2://", 1)
+
+    if database_url.startswith("postgresql") and "sslmode=" not in database_url:
+        database_url += "?sslmode=require"
+
     return database_url
 
 

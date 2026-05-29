@@ -18,6 +18,9 @@ def get_database_url() -> str:
         database_url = database_url.replace(
             "postgresql://", "postgresql+psycopg2://", 1)
 
+    if database_url.startswith("postgresql") and "sslmode=" not in database_url:
+        database_url += "?sslmode=require"
+
     return database_url
 
 
