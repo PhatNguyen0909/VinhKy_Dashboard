@@ -1,39 +1,86 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import './SideBar.css';
 
-// Inline SVG icons (no extra assets needed)
-const IconAdd = (props) => (
-	<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" {...props}>
-		<path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6z"/>
-	</svg>
-);
-const IconReceipt = (props) => (
-	<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" {...props}>
-		<path d="M6 2a2 2 0 0 0-2 2v17l3-2 3 2 3-2 3 2 3-2 3 2V4a2 2 0 0 0-2-2H6zm2 5h8a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2zm0 4h8a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2zm0 4h5a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2z"/>
-	</svg>
-);
-const IconRevenue = (props) => (
-	<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" {...props}>
-		<path d="M3 3a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3zm2 14v-5h3v5H5zm5 0V7h3v10h-3zm5 0v-8h3v8h-3z"/>
-	</svg>
-);
-const IconStats = (props) => (
-	<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" {...props}>
-		<path d="M4 19a1 1 0 0 1-1-1V6a1 1 0 1 1 2 0v11h15a1 1 0 1 1 0 2H4zm3-4a1 1 0 0 1-1-1V9a1 1 0 1 1 2 0v5a1 1 0 0 1-1 1zm5 0a1 1 0 0 1-1-1V7a1 1 0 1 1 2 0v7a1 1 0 0 1-1 1zm5 0a1 1 0 0 1-1-1v-3a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1z"/>
-	</svg>
-);
+const Icon = ({ type }) => {
+  const paths = {
+    dashboard: (
+      <>
+        <rect x='3' y='3' width='7' height='7' rx='1' />
+        <rect x='14' y='3' width='7' height='7' rx='1' />
+        <rect x='3' y='14' width='7' height='7' rx='1' />
+        <rect x='14' y='14' width='7' height='7' rx='1' />
+      </>
+    ),
+    revenue: (
+      <>
+        <path d='M3 17 9 11l4 4 8-9' />
+        <path d='M15 6h6v6' />
+      </>
+    ),
+    expenses: (
+      <>
+        <path d='M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z' />
+        <path d='M14 3v5h5M8 13h8M8 17h5' />
+      </>
+    ),
+  };
+  return (
+    <svg
+      className='nav-icon'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='1.8'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      {paths[type]}
+    </svg>
+  );
+};
+
 function Sidebar() {
-	return (
-		<div className="sidebar">
-			<NavLink to="/" className="nav-link"><IconAdd className="nav-icon" /><span className="nav-text">Enter Cost</span></NavLink>
-			<NavLink to="/reports" className="nav-link"><IconReceipt className="nav-icon" /><span className="nav-text">Expenses</span></NavLink>
-			<NavLink to="/revenue" className="nav-link"><IconRevenue className="nav-icon" /><span className="nav-text">Revenues</span></NavLink>
-			<NavLink to="/statistics" className="nav-link"><IconStats className="nav-icon" /><span className="nav-text">Statistics</span></NavLink>
-		</div>
-	);
+  return (
+    <aside className='sidebar'>
+      <NavLink
+        to='/'
+        className='brand-lockup'
+        aria-label='mise Restaurant Finance'
+      >
+        <span className='brand-mark' aria-hidden='true'>
+          m
+        </span>
+        <span>
+          <strong>Vĩnh Ký</strong>
+          <small>RESTAURANT FINANCE</small>
+        </span>
+      </NavLink>
+      <div className='sidebar-section-label'>KHÔNG GIAN LÀM VIỆC</div>
+      <nav className='sidebar-nav' aria-label='Điều hướng chính'>
+        <NavLink to='/' end className='nav-link'>
+          <Icon type='dashboard' />
+          <span>Tổng quan</span>
+        </NavLink>
+        <NavLink to='/expenses' className='nav-link'>
+          <Icon type='expenses' />
+          <span>Chi phí</span>
+        </NavLink>
+        <NavLink to='/revenue' className='nav-link'>
+          <Icon type='revenue' />
+          <span>Doanh thu</span>
+        </NavLink>
+      </nav>
+      <div className='sidebar-footer'>
+        <span className='profile-avatar'>VK</span>
+        <span className='profile-copy'>
+          <strong>Quản lý nhà hàng</strong>
+          <small>Tài khoản quản trị</small>
+        </span>
+      </div>
+    </aside>
+  );
 }
+
 export default Sidebar;
-
-

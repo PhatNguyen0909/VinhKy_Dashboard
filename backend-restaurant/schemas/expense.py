@@ -1,10 +1,10 @@
-from datetime import date
+from datetime import date as DateType
 from pydantic import BaseModel, Field
 from typing import Optional
 
 
 class ExpenseBase(BaseModel):
-    date: date
+    date: DateType
 
 
 class ExpenseCreate(ExpenseBase):
@@ -20,7 +20,7 @@ class ExpenseRead(ExpenseBase):
 
 
 class ExpenseItemBase(BaseModel):
-    date: date
+    date: DateType
     ha: Optional[float] = Field(0.0)
     ga: Optional[float] = Field(0.0)
     gao: Optional[float] = Field(0.0)
@@ -48,7 +48,7 @@ class ExpenseItemRead(ExpenseItemBase):
 
 class ExpenseItemUpdate(BaseModel):
     # All fields optional for partial update
-    date: Optional[date] = None
+    date: Optional[DateType] = None
     ha: Optional[float] = None
     ga: Optional[float] = None
     gao: Optional[float] = None
