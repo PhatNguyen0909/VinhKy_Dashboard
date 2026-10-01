@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dasboard/Dashboard';
-import Report from './pages/Reports/Report';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Expenses from './pages/Expenses/Expenses';
 import Revenue from './pages/Revenue/Revenue';
 import Sidebar from './components/SideBar/Sidebar';
-import Statistic from './pages/Statistic/Statistic';
 import './index.css';
-
-
-
 
 function App() {
   const [isMobilePortrait, setIsMobilePortrait] = useState(false);
@@ -33,23 +34,31 @@ function App() {
   return (
     <Router>
       {isMobilePortrait ? (
-        <div className="orientation-lock-screen" role="alert" aria-live="assertive">
-          <div className="orientation-lock-card">
-            <div className="orientation-lock-icon">📱</div>
+        <div
+          className='orientation-lock-screen'
+          role='alert'
+          aria-live='assertive'
+        >
+          <div className='orientation-lock-card'>
+            <div className='orientation-lock-icon'>📱</div>
             <h1>Vui lòng xoay ngang màn hình</h1>
             <p>Ứng dụng này chỉ hỗ trợ khi dùng điện thoại ở chế độ ngang.</p>
             <p>Xoay thiết bị sang ngang để tiếp tục sử dụng.</p>
           </div>
         </div>
       ) : (
-        <div className="app-layout">
-          <div className="main-content">
+        <div className='app-layout'>
+          <div className='main-content'>
             <Sidebar />
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/reports" element={<Report />} />
-              <Route path="/revenue" element={<Revenue />} />
-              <Route path="/statistics" element={<Statistic />} />
+              <Route path='/' element={<Dashboard />} />
+              <Route path='/expenses' element={<Expenses />} />
+              <Route
+                path='/reports'
+                element={<Navigate to='/expenses' replace />}
+              />
+              <Route path='/statistics' element={<Navigate to='/' replace />} />
+              <Route path='/revenue' element={<Revenue />} />
             </Routes>
           </div>
         </div>
@@ -59,7 +68,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
