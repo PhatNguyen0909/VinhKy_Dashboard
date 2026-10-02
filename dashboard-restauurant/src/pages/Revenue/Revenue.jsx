@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { API_URL } from '../../api';
 import './Revenue.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const todayValue = () => {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
