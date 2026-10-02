@@ -7,6 +7,7 @@ from api import expenses
 from api import revenues
 from api import profits
 from api import health
+from api import assistant
 
 
 def create_app() -> FastAPI:
@@ -24,6 +25,7 @@ def create_app() -> FastAPI:
     app.include_router(revenues.router)
     app.include_router(profits.router)
     app.include_router(health.router)
+    app.include_router(assistant.router)
 
     return app
 

@@ -8,6 +8,7 @@ import {
 import Dashboard from './pages/Dashboard/Dashboard';
 import Expenses from './pages/Expenses/Expenses';
 import Revenue from './pages/Revenue/Revenue';
+import FinanceAssistant from './components/FinanceAssistant/FinanceAssistant';
 import Sidebar from './components/SideBar/Sidebar';
 import './index.css';
 
@@ -61,6 +62,7 @@ function App() {
               <Route path='/revenue' element={<Revenue />} />
             </Routes>
           </div>
+          <FinanceAssistant />
         </div>
       )}
     </Router>

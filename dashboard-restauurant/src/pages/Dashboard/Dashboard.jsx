@@ -57,6 +57,13 @@ function Dashboard() {
   const [month, setMonth] = useState(todayMonth);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const handleFinanceUpdate = () => setRefreshKey((key) => key + 1);
+    window.addEventListener('finance-data-updated', handleFinanceUpdate);
+    return () => window.removeEventListener('finance-data-updated', handleFinanceUpdate);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -92,7 +99,7 @@ function Dashboard() {
     return () => {
       active = false;
     };
-  }, [todayMonth]);
+  }, [todayMonth, refreshKey]);
 
   const selectedYear = Number(month.slice(0, 4));
   const previousDate = new Date(
