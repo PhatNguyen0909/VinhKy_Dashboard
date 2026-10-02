@@ -3,9 +3,9 @@ import {
   EXPENSE_FIELDS as FIELDS,
   parseExpenseMessage,
 } from './expenseChatParser';
+import { API_URL } from '../../api';
 import './Expenses.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const number = (value) =>
   new Intl.NumberFormat('vi-VN').format(Number(value) || 0);
 const createMessageId = () =>
