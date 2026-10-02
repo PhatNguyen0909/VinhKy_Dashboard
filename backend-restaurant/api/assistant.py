@@ -19,7 +19,7 @@ from services.finance_assistant import (
 )
 
 router = APIRouter(prefix="/api/assistant", tags=["finance-assistant"])
-EXPENSE_KEYS = ("nha", "gao", "cho", "kho", "gas", "dau", "trung", "hop", "luong", "ga", "khac")
+EXPENSE_KEYS = ("ha", "gao", "cho", "kho", "gas", "dau", "trung", "hop", "luong", "ga", "khac")
 REVENUE_KEYS = ("tien_mat", "chuyen_khoan")
 MAX_AMOUNT = 1_000_000_000_000
 EVIDENCE_TERMS = {

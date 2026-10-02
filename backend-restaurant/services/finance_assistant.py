@@ -32,6 +32,32 @@ class FinanceAssistantError(Exception):
     pass
 
 
+def explain_provider_error(response):
+    try:
+        provider_error = response.json().get("error", {})
+    except (TypeError, ValueError):
+        provider_error = {}
+
+    code = provider_error.get("code")
+    error_type = provider_error.get("type")
+
+    if response.status_code == 429:
+        if code in ("insufficient_quota", "billing_not_active", "billing_hard_limit_reached"):
+            return (
+                "OpenAI API đã hết quota hoặc project chưa bật billing. "
+                "Kiểm tra Billing, Usage limits và project đang dùng trong OpenAI Platform."
+            )
+        if code == "rate_limit_exceeded" or error_type == "rate_limit_error":
+            return "OpenAI đang giới hạn tốc độ yêu cầu. Hãy chờ một chút rồi thử lại."
+        return "OpenAI trả HTTP 429. Kiểm tra quota, billing và rate limits của project."
+
+    if response.status_code == 403:
+        return "OpenAI project chưa có quyền sử dụng model đã cấu hình."
+    if response.status_code == 400:
+        return "OpenAI từ chối request. Kiểm tra model và cấu hình request của backend."
+    return f"Dịch vụ OpenAI trả về lỗi HTTP {response.status_code}."
+
+
 async def ask_finance_assistant(messages, today, finance_context):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -78,12 +104,8 @@ async def ask_finance_assistant(messages, today, finance_context):
 
     if response.status_code == 401:
         raise FinanceAssistantError("OPENAI_API_KEY không hợp lệ hoặc đã hết hạn.")
-    if response.status_code == 429:
-        raise FinanceAssistantError("Dịch vụ AI đang quá tải hoặc hết hạn mức.")
     if response.status_code >= 400:
-        raise FinanceAssistantError(
-            f"Dịch vụ AI trả về lỗi HTTP {response.status_code}."
-        )
+        raise FinanceAssistantError(explain_provider_error(response))
 
     try:
         content = response.json()["choices"][0]["message"]["content"]
