@@ -38,7 +38,7 @@ function FinanceAssistant() {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Mình là trợ lý tài chính. Bạn có thể hỏi hoặc mô tả khoản thu, chi theo cách tự nhiên. Mình sẽ hỏi lại nếu thiếu thông tin; dữ liệu chỉ được lưu khi bạn xác nhận bản nháp.',
+        'Mình hỗ trợ nhập thu, chi miễn phí, không gửi dữ liệu ra dịch vụ AI bên ngoài. Hãy ghi ngày, hạng mục và số tiền; nếu thiếu thông tin mình sẽ hỏi lại. Dữ liệu chỉ được lưu sau khi bạn kiểm tra và xác nhận bản nháp.',
     },
   ]);
   const [sending, setSending] = useState(false);
@@ -200,7 +200,7 @@ function FinanceAssistant() {
             </span>
             <div>
               <strong>Trợ lý tài chính</strong>
-              <small>AI hỗ trợ thu và chi</small>
+              <small>Nhập liệu cục bộ • Không phí AI</small>
             </div>
             <button
               className='finance-assistant-close'
