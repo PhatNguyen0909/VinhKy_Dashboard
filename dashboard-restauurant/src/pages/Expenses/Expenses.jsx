@@ -1,15 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  EXPENSE_FIELDS as FIELDS,
-  parseExpenseMessage,
-} from './expenseChatParser';
+import React, { useEffect, useMemo, useState } from 'react';
+import { EXPENSE_FIELDS as FIELDS } from './expenseFields';
 import { API_URL } from '../../api';
 import './Expenses.css';
 
 const number = (value) =>
   new Intl.NumberFormat('vi-VN').format(Number(value) || 0);
-const createMessageId = () =>
-  `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const getApiError = (result, fallback) => {
   const detail = Array.isArray(result?.detail)
     ? result.detail
@@ -43,17 +38,13 @@ function Expenses() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [chatSaving, setChatSaving] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text: 'Bạn có thể nhập tự nhiên, ví dụ: “hôm qua tiền chợ 5436, tiền khác 3000”. Mình sẽ tạo bản nháp để bạn xác nhận trước khi lưu.',
-    },
-  ]);
-  const chatLogRef = useRef(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const handleFinanceUpdate = () => setRefreshKey((key) => key + 1);
+    window.addEventListener('finance-data-updated', handleFinanceUpdate);
+    return () => window.removeEventListener('finance-data-updated', handleFinanceUpdate);
+  }, []);
 
   useEffect(() => {
     fetch(`${API_URL}/expense_items`)
@@ -72,13 +63,7 @@ function Expenses() {
       })
       .catch((loadError) => setError(loadError.message))
       .finally(() => setLoading(false));
-  }, [today]);
-
-  useEffect(() => {
-    if (chatOpen && chatLogRef.current) {
-      chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-    }
-  }, [chatOpen, chatMessages]);
+  }, [today, refreshKey]);
 
   const groups = useMemo(() => {
     const grouped = {};
@@ -187,81 +172,6 @@ function Expenses() {
       setError(saveError.message);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const sendChatMessage = (event) => {
-    event.preventDefault();
-    const text = chatInput.trim();
-    if (!text) return;
-
-    const parsed = parseExpenseMessage(text, today);
-    const userMessage = { id: createMessageId(), role: 'user', text };
-    if (parsed.error) {
-      setChatMessages((current) => [
-        ...current,
-        userMessage,
-        { id: createMessageId(), role: 'assistant', text: parsed.error },
-      ]);
-    } else {
-      const draft = {
-        date: parsed.date,
-        amounts: parsed.amounts,
-        categories: parsed.categories,
-        total: parsed.categories.reduce(
-          (sum, field) => sum + parsed.amounts[field.key],
-          0
-        ),
-      };
-      setChatMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          id: createMessageId(),
-          role: 'assistant',
-          text: 'Mình đã hiểu các khoản chi này. Kiểm tra lại rồi xác nhận lưu nhé.',
-          draft,
-        },
-      ]);
-    }
-    setChatInput('');
-  };
-
-  const saveChatDraft = async (messageId, draft) => {
-    if (chatSaving) return;
-    setChatSaving(true);
-    try {
-      const response = await fetch(`${API_URL}/expense_items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: draft.date, ...draft.amounts }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(
-          getApiError(result, 'Không thể lưu phiếu chi. Vui lòng thử lại.')
-        );
-      }
-      setItems((current) => [...current, result]);
-      setMonth(draft.date.slice(0, 7));
-      setSearch('');
-      setChatMessages((current) => [
-        ...current.map((message) =>
-          message.id === messageId ? { ...message, saved: true } : message
-        ),
-        {
-          id: createMessageId(),
-          role: 'assistant',
-          text: `Đã lưu phiếu chi ngày ${new Intl.DateTimeFormat('vi-VN').format(new Date(`${draft.date}T00:00:00`))}.`,
-        },
-      ]);
-    } catch (saveError) {
-      setChatMessages((current) => [
-        ...current,
-        { id: createMessageId(), role: 'assistant', text: saveError.message },
-      ]);
-    } finally {
-      setChatSaving(false);
     }
   };
 
@@ -558,151 +468,6 @@ function Expenses() {
           </div>
         )}
       </section>
-      {chatOpen && (
-        <section
-          className='expense-chat-panel'
-          role='dialog'
-          aria-label='Trợ lý nhập chi phí'
-        >
-          <header className='expense-chat-header'>
-            <span className='expense-chat-avatar' aria-hidden='true'>
-              <svg
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='1.8'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              >
-                <rect x='4' y='7' width='16' height='13' rx='4' />
-                <path d='M9 12h.01M15 12h.01M9 16h6M12 7V4m-2 0h4' />
-              </svg>
-            </span>
-            <div>
-              <strong>Trợ lý chi phí</strong>
-              <small>Nhập khoản chi bằng câu tự nhiên</small>
-            </div>
-            <button
-              type='button'
-              className='expense-chat-close'
-              aria-label='Đóng trợ lý'
-              onClick={() => setChatOpen(false)}
-            >
-              ×
-            </button>
-          </header>
-          <div
-            className='expense-chat-messages'
-            ref={chatLogRef}
-            role='log'
-            aria-live='polite'
-          >
-            {chatMessages.map((message) => (
-              <article
-                className={`expense-chat-message ${message.role}`}
-                key={message.id}
-              >
-                <p>{message.text}</p>
-                {message.draft && (
-                  <div className='expense-chat-draft'>
-                    <div className='expense-chat-draft-date'>
-                      Ngày{' '}
-                      <strong>
-                        {new Intl.DateTimeFormat('vi-VN').format(
-                          new Date(`${message.draft.date}T00:00:00`)
-                        )}
-                      </strong>
-                    </div>
-                    <div className='expense-chat-draft-lines'>
-                      {message.draft.categories.map((field) => (
-                        <div key={field.key}>
-                          <span>{field.label}</span>
-                          <strong>
-                            {number(message.draft.amounts[field.key])} đ
-                          </strong>
-                        </div>
-                      ))}
-                    </div>
-                    <div className='expense-chat-draft-total'>
-                      <span>Tổng phiếu</span>
-                      <strong>{number(message.draft.total)} đ</strong>
-                    </div>
-                    <button
-                      type='button'
-                      disabled={chatSaving || message.saved}
-                      onClick={() => saveChatDraft(message.id, message.draft)}
-                    >
-                      {message.saved
-                        ? 'Đã lưu'
-                        : chatSaving
-                          ? 'Đang lưu...'
-                          : 'Xác nhận & lưu phiếu'}
-                    </button>
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
-          <form className='expense-chat-composer' onSubmit={sendChatMessage}>
-            <label className='sr-only' htmlFor='expense-chat-input'>
-              Mô tả khoản chi
-            </label>
-            <textarea
-              id='expense-chat-input'
-              rows='2'
-              maxLength='500'
-              placeholder='Ví dụ: tiền chợ 5436, tiền khác 3000'
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-            />
-            <button
-              type='submit'
-              aria-label='Gửi nội dung'
-              disabled={!chatInput.trim()}
-            >
-              <svg
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                aria-hidden='true'
-              >
-                <path d='m22 2-7 20-4-9-9-4Z' />
-                <path d='M22 2 11 13' />
-              </svg>
-            </button>
-          </form>
-        </section>
-      )}
-      <button
-        className='expense-chat-toggle'
-        type='button'
-        aria-label={
-          chatOpen ? 'Đóng trợ lý nhập chi phí' : 'Mở trợ lý nhập chi phí'
-        }
-        aria-expanded={chatOpen}
-        title='Trợ lý nhập chi phí'
-        onClick={() => setChatOpen((open) => !open)}
-      >
-        {chatOpen ? (
-          <span aria-hidden='true'>×</span>
-        ) : (
-          <svg
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='1.8'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            aria-hidden='true'
-          >
-            <path d='M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-6.5A7.5 7.5 0 1 1 20 11.5Z' />
-            <path d='M8 11h.01M12 11h.01M16 11h.01' />
-          </svg>
-        )}
-      </button>
     </main>
   );
 }

@@ -23,6 +23,13 @@ function Revenue() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const handleFinanceUpdate = () => setRefreshKey((key) => key + 1);
+    window.addEventListener('finance-data-updated', handleFinanceUpdate);
+    return () => window.removeEventListener('finance-data-updated', handleFinanceUpdate);
+  }, []);
 
   useEffect(() => {
     fetch(`${API_URL}/revenues`)
@@ -42,7 +49,7 @@ function Revenue() {
       })
       .catch((loadError) => setError(loadError.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     const existing = revenues.find((record) => record.date === date);
