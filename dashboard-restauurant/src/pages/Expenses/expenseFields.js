@@ -1,5 +1,5 @@
 export const EXPENSE_FIELDS = [
-  { key: 'nha', label: 'Tiền nhà' },
+  { key: 'ha', label: 'Tiền nhà' },
   { key: 'gao', label: 'Tiền gạo' },
   { key: 'cho', label: 'Tiền chợ' },
   { key: 'kho', label: 'Tiền khô' },
