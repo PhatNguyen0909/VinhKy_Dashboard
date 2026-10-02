@@ -6,6 +6,7 @@ from db import engine, Base
 from api import expenses
 from api import revenues
 from api import profits
+from api import health
 
 
 def create_app() -> FastAPI:
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
     app.include_router(expenses.router)
     app.include_router(revenues.router)
     app.include_router(profits.router)
+    app.include_router(health.router)
 
     return app
 
