@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import httpx
 
@@ -32,6 +33,13 @@ class FinanceAssistantError(Exception):
     pass
 
 
+def _safe_error_code(value):
+    if value is None:
+        return "unknown"
+    sanitized = re.sub(r"[^A-Za-z0-9_.-]", "", str(value))[:48]
+    return sanitized or "unknown"
+
+
 def explain_provider_error(response):
     try:
         provider_error = response.json().get("error", {})
@@ -49,7 +57,10 @@ def explain_provider_error(response):
             )
         if code == "rate_limit_exceeded" or error_type == "rate_limit_error":
             return "OpenAI đang giới hạn tốc độ yêu cầu. Hãy chờ một chút rồi thử lại."
-        return "OpenAI trả HTTP 429. Kiểm tra quota, billing và rate limits của project."
+        return (
+            "OpenAI trả HTTP 429. Kiểm tra quota, billing và rate limits của project. "
+            f"(type={_safe_error_code(error_type)}, code={_safe_error_code(code)})"
+        )
 
     if response.status_code == 403:
         return "OpenAI project chưa có quyền sử dụng model đã cấu hình."

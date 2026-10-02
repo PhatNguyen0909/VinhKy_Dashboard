@@ -43,7 +43,8 @@ function Expenses() {
   useEffect(() => {
     const handleFinanceUpdate = () => setRefreshKey((key) => key + 1);
     window.addEventListener('finance-data-updated', handleFinanceUpdate);
-    return () => window.removeEventListener('finance-data-updated', handleFinanceUpdate);
+    return () =>
+      window.removeEventListener('finance-data-updated', handleFinanceUpdate);
   }, []);
 
   useEffect(() => {
