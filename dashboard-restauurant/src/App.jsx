@@ -10,9 +10,16 @@ import Expenses from './pages/Expenses/Expenses';
 import Revenue from './pages/Revenue/Revenue';
 import FinanceAssistant from './components/FinanceAssistant/FinanceAssistant';
 import Sidebar from './components/SideBar/Sidebar';
+import SplashScreen from './components/SplashScreen/SplashScreen';
 import './index.css';
 
 function App() {
+  const [showSplash, setShowSplash] = useState(
+    () =>
+      window.matchMedia('(max-width: 760px)').matches ||
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true
+  );
   const [isMobilePortrait, setIsMobilePortrait] = useState(false);
 
   useEffect(() => {
@@ -32,9 +39,17 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!showSplash) return undefined;
+    const timeoutId = window.setTimeout(() => setShowSplash(false), 1600);
+    return () => window.clearTimeout(timeoutId);
+  }, [showSplash]);
+
   return (
     <Router>
-      {isMobilePortrait ? (
+      {showSplash ? (
+        <SplashScreen />
+      ) : isMobilePortrait ? (
         <div
           className='orientation-lock-screen'
           role='alert'

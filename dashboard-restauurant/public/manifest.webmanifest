@@ -1,0 +1,17 @@
+{
+  "name": "VinhKy Dashboard",
+  "short_name": "VinhKy",
+  "description": "Revenue, expense and analytics dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07152b",
+  "theme_color": "#07152b",
+  "icons": [
+    {
+      "src": "/vinhky-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
