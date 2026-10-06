@@ -55,7 +55,9 @@
   font-size: 11px;
 }
 .overview-month-picker input {
-  width: 116px;
+  width: 158px;
+  min-width: 0;
+  flex: 1;
   padding: 0;
   border: 0;
   outline: 0;
@@ -260,6 +262,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 9px;
+  max-height: 180px;
+  overflow-y: auto;
 }
 .overview-source-legend > div {
   display: grid;
@@ -270,11 +274,25 @@
 }
 .overview-source-legend span {
   display: flex;
+  min-width: 0;
+  align-items: center;
+}
+.overview-source-legend i {
+  flex: 0 0 8px;
 }
 .overview-source-legend strong {
   color: #293d33;
   font-size: 12px;
   font-weight: 600;
+}
+.overview-chart-empty {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  margin: 0;
+  color: #829087;
+  font-size: 12px;
+  text-align: center;
 }
 
 @media (max-width: 1050px) {
@@ -311,9 +329,19 @@
   }
   .overview-actions {
     width: 100%;
+    align-items: stretch;
+    flex-direction: column;
   }
   .overview-month-picker {
-    flex: 1;
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .overview-month-picker input {
+    width: 100%;
+  }
+  .overview-add-button {
+    align-self: flex-end;
   }
   .overview-kpis {
     gap: 8px;

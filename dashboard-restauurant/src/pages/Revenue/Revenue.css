@@ -250,7 +250,7 @@
 }
 .revenue-search {
   width: min(260px, calc(100% - 32px));
-  margin: 14px 16px 0 auto;
+  margin: 14px 16px 14px auto;
   background: #fbfcfb;
 }
 .revenue-table-wrap {
