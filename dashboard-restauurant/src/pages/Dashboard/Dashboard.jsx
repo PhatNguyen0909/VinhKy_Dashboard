@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../../api';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { EXPENSE_FIELDS } from '../Expenses/expenseFields';
+import { Bar, Pie } from 'react-chartjs-2';
 import {
   ArcElement,
   BarElement,
@@ -27,6 +28,20 @@ const toMonth = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 const formatMoney = (value) =>
   new Intl.NumberFormat('vi-VN').format(value || 0);
+const chartGradient = (bottomColor, topColor) => (context) => {
+  const { chart } = context;
+  const { ctx, chartArea } = chart;
+  if (!chartArea) return bottomColor;
+  const gradient = ctx.createLinearGradient(
+    0,
+    chartArea.bottom,
+    0,
+    chartArea.top
+  );
+  gradient.addColorStop(0, bottomColor);
+  gradient.addColorStop(1, topColor);
+  return gradient;
+};
 const monthNames = [
   'T1',
   'T2',
@@ -41,6 +56,19 @@ const monthNames = [
   'T11',
   'T12',
 ];
+const expenseChartColors = [
+  '#315f4e',
+  '#e7b77f',
+  '#74a9c2',
+  '#c9df66',
+  '#a887bd',
+  '#dd746b',
+  '#73916e',
+  '#df9a49',
+  '#5085a6',
+  '#d27891',
+  '#727fbe',
+];
 
 const sumByMonth = (records, month, field) =>
   records.reduce(
@@ -54,6 +82,7 @@ function Dashboard() {
   const todayMonth = toMonth(new Date());
   const [revenues, setRevenues] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [expenseItems, setExpenseItems] = useState([]);
   const [month, setMonth] = useState(todayMonth);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -77,12 +106,21 @@ function Dashboard() {
         if (!response.ok) throw new Error('Không thể tải chi phí.');
         return response.json();
       }),
+      fetch(`${API_URL}/expense_items`).then((response) => {
+        if (!response.ok) throw new Error('Không thể tải chi tiết chi phí.');
+        return response.json();
+      }),
     ])
-      .then(([revenueRows, expenseRows]) => {
+      .then(([revenueRows, expenseRows, expenseItemRows]) => {
         if (!active) return;
         setRevenues(revenueRows || []);
         setExpenses(expenseRows || []);
-        const availableMonths = [...(revenueRows || []), ...(expenseRows || [])]
+        setExpenseItems(expenseItemRows || []);
+        const availableMonths = [
+          ...(revenueRows || []),
+          ...(expenseRows || []),
+          ...(expenseItemRows || []),
+        ]
           .map((row) => monthValue(row.date))
           .filter(Boolean)
           .sort();
@@ -144,16 +182,22 @@ function Dashboard() {
         {
           label: 'Doanh thu',
           data: yearRows(revenues, 'total'),
-          backgroundColor: '#315f4e',
-          borderRadius: 3,
-          barPercentage: 0.55,
+          backgroundColor: chartGradient('#315f4e', '#67927e'),
+          borderRadius: 7,
+          borderSkipped: 'bottom',
+          barPercentage: 0.9,
+          categoryPercentage: 0.86,
+          maxBarThickness: 22,
         },
         {
           label: 'Chi phí',
           data: yearRows(expenses, 'amount'),
-          backgroundColor: '#c9df66',
-          borderRadius: 3,
-          barPercentage: 0.55,
+          backgroundColor: chartGradient('#a5bf42', '#d6e694'),
+          borderRadius: 7,
+          borderSkipped: 'bottom',
+          barPercentage: 0.9,
+          categoryPercentage: 0.86,
+          maxBarThickness: 22,
         },
       ],
     };
@@ -167,12 +211,36 @@ function Dashboard() {
     [revenues, month]
   );
 
+  const expenseBreakdown = useMemo(
+    () =>
+      EXPENSE_FIELDS.map((field) => ({
+        ...field,
+        amount: expenseItems.reduce(
+          (sum, item) =>
+            sum +
+            (monthValue(item.date) === month
+              ? Number(item[field.key] || 0)
+              : 0),
+          0
+        ),
+      })).filter((field) => field.amount > 0),
+    [expenseItems, month]
+  );
+
   const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { display: false },
       tooltip: {
+        backgroundColor: '#172c26',
+        titleColor: '#f5f8f2',
+        bodyColor: '#e5eee8',
+        borderColor: '#ffffff24',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 10,
         callbacks: {
           label: (context) =>
             `${context.dataset.label}: ${formatMoney(context.parsed.y)} đ`,
@@ -183,7 +251,13 @@ function Dashboard() {
       x: {
         grid: { display: false },
         border: { display: false },
-        ticks: { color: '#8b9992', font: { size: 10 } },
+        ticks: {
+          color: '#8b9992',
+          font: { size: 10 },
+          minRotation: 0,
+          maxRotation: 0,
+          autoSkip: false,
+        },
       },
       y: {
         beginAtZero: true,
@@ -192,6 +266,7 @@ function Dashboard() {
         ticks: {
           color: '#8b9992',
           font: { size: 10 },
+          maxTicksLimit: 5,
           callback: (value) =>
             new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(
               value
@@ -201,10 +276,9 @@ function Dashboard() {
     },
   };
 
-  const splitOptions = {
+  const pieOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '72%',
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -269,7 +343,12 @@ function Dashboard() {
               : 'Chi phí đang cao hơn doanh thu'}
           </small>
         </article>
-        <article className='overview-kpi'>
+        <article
+          className='overview-kpi'
+          title={`Tiền mặt: ${formatMoney(revenueSplit.cash)} đ\nChuyển khoản: ${formatMoney(revenueSplit.transfer)} đ`}
+          aria-label={`Tổng doanh thu ${formatMoney(totals.revenue)} đ. Tiền mặt ${formatMoney(revenueSplit.cash)} đ, chuyển khoản ${formatMoney(revenueSplit.transfer)} đ.`}
+          tabIndex={0}
+        >
           <span
             className='overview-kpi-icon overview-kpi-green'
             aria-hidden='true'
@@ -319,51 +398,52 @@ function Dashboard() {
         <article className='overview-panel overview-split-panel'>
           <header className='overview-panel-heading'>
             <div>
-              <h2>Nguồn doanh thu</h2>
+              <h2>Chi phí theo hạng mục</h2>
               <p>
-                Phân bổ thanh toán tháng {month.slice(5, 7)}/{month.slice(0, 4)}
+                Phân bổ chi phí tháng {month.slice(5, 7)}/{month.slice(0, 4)}
               </p>
             </div>
           </header>
           <div className='overview-donut-wrap'>
-            <Doughnut
-              data={{
-                labels: ['Chuyển khoản', 'Tiền mặt'],
-                datasets: [
-                  {
-                    data: [revenueSplit.transfer, revenueSplit.cash],
-                    backgroundColor: ['#315f4e', '#e7b77f'],
-                    borderWidth: 0,
-                    hoverOffset: 3,
-                  },
-                ],
-              }}
-              options={splitOptions}
-            />
-            <div className='overview-donut-label'>
-              <strong>
-                {totals.revenue
-                  ? `${Math.round((revenueSplit.transfer / totals.revenue) * 100)}%`
-                  : '0%'}
-              </strong>
-              <span>Chuyển khoản</span>
-            </div>
+            {expenseBreakdown.length ? (
+              <Pie
+                data={{
+                  labels: expenseBreakdown.map((field) => field.label),
+                  datasets: [
+                    {
+                      data: expenseBreakdown.map((field) => field.amount),
+                      backgroundColor: expenseBreakdown.map(
+                        (_, index) =>
+                          expenseChartColors[index % expenseChartColors.length]
+                      ),
+                      borderWidth: 0,
+                      hoverOffset: 3,
+                    },
+                  ],
+                }}
+                options={pieOptions}
+              />
+            ) : (
+              <p className='overview-chart-empty'>
+                Chưa có chi phí theo hạng mục trong tháng này.
+              </p>
+            )}
           </div>
           <div className='overview-source-legend'>
-            <div>
-              <span>
-                <i className='legend-revenue' />
-                Chuyển khoản
-              </span>
-              <strong>{formatMoney(revenueSplit.transfer)} đ</strong>
-            </div>
-            <div>
-              <span>
-                <i className='legend-cash' />
-                Tiền mặt
-              </span>
-              <strong>{formatMoney(revenueSplit.cash)} đ</strong>
-            </div>
+            {expenseBreakdown.map((field, index) => (
+              <div key={field.key}>
+                <span>
+                  <i
+                    style={{
+                      backgroundColor:
+                        expenseChartColors[index % expenseChartColors.length],
+                    }}
+                  />
+                  {field.label}
+                </span>
+                <strong>{formatMoney(field.amount)} đ</strong>
+              </div>
+            ))}
           </div>
         </article>
       </section>
