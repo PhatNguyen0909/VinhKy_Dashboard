@@ -8,6 +8,9 @@ import {
 import Dashboard from './pages/Dashboard/Dashboard';
 import Expenses from './pages/Expenses/Expenses';
 import Revenue from './pages/Revenue/Revenue';
+import Categories from './pages/Website/Categories';
+import Menu from './pages/Website/Menu';
+import Orders from './pages/Website/Orders';
 import FinanceAssistant from './components/FinanceAssistant/FinanceAssistant';
 import Sidebar from './components/SideBar/Sidebar';
 import SplashScreen from './components/SplashScreen/SplashScreen';
@@ -75,6 +78,9 @@ function App() {
               />
               <Route path='/statistics' element={<Navigate to='/' replace />} />
               <Route path='/revenue' element={<Revenue />} />
+              <Route path='/categories' element={<Categories />} />
+              <Route path='/menu' element={<Menu />} />
+              <Route path='/orders' element={<Orders />} />
             </Routes>
           </div>
           <FinanceAssistant />

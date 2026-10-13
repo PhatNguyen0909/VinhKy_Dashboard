@@ -55,6 +55,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name='orders'
+        options={{
+          title: 'Đơn hàng',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name='receipt-outline' color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name='settings'
         options={{
           title: 'Cài đặt',

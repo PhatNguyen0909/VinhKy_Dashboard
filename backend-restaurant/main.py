@@ -8,6 +8,8 @@ from api import revenues
 from api import profits
 from api import health
 from api import assistant
+from api import website
+import models
 
 
 def create_app() -> FastAPI:
@@ -26,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(profits.router)
     app.include_router(health.router)
     app.include_router(assistant.router)
+    app.include_router(website.router)
 
     return app
 
@@ -36,6 +39,11 @@ app = create_app()
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    from db import SessionLocal
+    from services.menu_seed import seed_menu
+
+    with SessionLocal() as session:
+        seed_menu(session)
 
 
 # --------------------------------------------------
