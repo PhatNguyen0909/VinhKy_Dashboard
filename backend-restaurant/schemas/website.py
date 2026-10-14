@@ -13,6 +13,7 @@ class CategoryRead(BaseModel):
     sort_order: int = 0
 
     class Config:
+        from_attributes = True
         orm_mode = True
 
 
@@ -23,6 +24,7 @@ class ProductIn(BaseModel):
     price: float = Field(0.0, ge=0)
     rating: float = Field(5.0, ge=0, le=5)
     is_best_seller: bool = False
+    is_available: bool = True
     image: str = ""
 
 
@@ -33,6 +35,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     rating: Optional[float] = Field(None, ge=0, le=5)
     is_best_seller: Optional[bool] = None
+    is_available: Optional[bool] = None
     image: Optional[str] = None
 
 
@@ -44,9 +47,11 @@ class ProductRead(BaseModel):
     price: float = 0.0
     rating: float = 5.0
     is_best_seller: bool = False
+    is_available: bool = True
     image: Optional[str] = ""
 
     class Config:
+        from_attributes = True
         orm_mode = True
 
 
@@ -60,6 +65,7 @@ class OrderItemRead(OrderItemIn):
     id: int
 
     class Config:
+        from_attributes = True
         orm_mode = True
 
 
@@ -93,4 +99,5 @@ class OrderRead(BaseModel):
     items: List[OrderItemRead] = []
 
     class Config:
+        from_attributes = True
         orm_mode = True
