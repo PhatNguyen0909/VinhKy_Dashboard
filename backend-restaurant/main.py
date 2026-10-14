@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-from db import engine, Base
+from db import engine, Base, ensure_mysql_utf8mb4
 from api import expenses
 from api import revenues
 from api import profits
@@ -39,6 +39,7 @@ app = create_app()
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    ensure_mysql_utf8mb4()
     from db import SessionLocal
     from services.menu_seed import seed_menu
 
