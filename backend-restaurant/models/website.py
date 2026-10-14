@@ -10,6 +10,10 @@ LongText = Text().with_variant(LONGTEXT, "mysql")
 
 class Category(Base):
     __tablename__ = "categories"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(120), nullable=False)
@@ -22,6 +26,10 @@ class Category(Base):
 
 class Product(Base):
     __tablename__ = "products"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
 
     id = Column(Integer, primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False, index=True)
@@ -37,6 +45,10 @@ class Product(Base):
 
 class Order(Base):
     __tablename__ = "orders"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String(32), unique=True, index=True)
@@ -57,6 +69,10 @@ class Order(Base):
 
 class OrderItem(Base):
     __tablename__ = "order_items"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
 
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False, index=True)
