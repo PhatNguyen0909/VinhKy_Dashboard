@@ -37,18 +37,20 @@ export default function useMenu() {
               icon: icons[i % icons.length],
             })),
           ],
-          products: prods.map((p) => ({
-            id: `p-${p.id}`,
-            name: p.name,
-            category: `c-${p.category_id}`,
-            description: p.description,
-            price: p.price,
-            rating: Number(p.rating).toFixed(1),
-            tag: p.is_best_seller ? "BÁN CHẠY" : "MÓN NGON",
-            softTag: !p.is_best_seller,
-            image: p.image,
-            imageDescription: p.name,
-          })),
+          products: prods
+            .filter((p) => p.is_available !== false)
+            .map((p) => ({
+              id: `p-${p.id}`,
+              name: p.name,
+              category: `c-${p.category_id}`,
+              description: p.description,
+              price: p.price,
+              rating: Number(p.rating).toFixed(1),
+              tag: p.is_best_seller ? "BÁN CHẠY" : "MÓN NGON",
+              softTag: !p.is_best_seller,
+              image: p.image,
+              imageDescription: p.name,
+            })),
         });
       })
       .catch(() => {});

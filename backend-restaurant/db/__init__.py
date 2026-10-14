@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
@@ -86,6 +86,24 @@ def ensure_mysql_utf8mb4() -> None:
                     "CONVERT TO CHARACTER SET utf8mb4 "
                     "COLLATE utf8mb4_unicode_ci"
                 )
+
+
+def ensure_product_availability_column() -> None:
+    inspector = inspect(engine)
+    if "products" not in inspector.get_table_names():
+        return
+    if any(
+        column["name"] == "is_available"
+        for column in inspector.get_columns("products")
+    ):
+        return
+
+    table_name = engine.dialect.identifier_preparer.quote("products")
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            f"ALTER TABLE {table_name} "
+            "ADD COLUMN is_available BOOLEAN NOT NULL DEFAULT 1"
+        )
 
 
 def get_db():

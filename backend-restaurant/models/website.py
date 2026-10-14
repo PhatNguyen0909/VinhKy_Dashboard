@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, true
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import relationship
 
@@ -38,6 +38,7 @@ class Product(Base):
     price = Column(Float, default=0.0)
     rating = Column(Float, default=5.0)
     is_best_seller = Column(Boolean, default=False)
+    is_available = Column(Boolean, nullable=False, default=True, server_default=true())
     image = Column(LongText, default="")
 
     category = relationship("Category", back_populates="products")

@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API_URL } from '../../api';
 import './Website.css';
 
 const json = { 'Content-Type': 'application/json' };
-const money = (v) => new Intl.NumberFormat('vi-VN').format(v || 0) + 'đ';
-const STATUS = { new: 'Mới', preparing: 'Đang làm', done: 'Hoàn thành', cancelled: 'Đã hủy' };
+const money = (value) => `${new Intl.NumberFormat('vi-VN').format(value || 0)}đ`;
+const STATUS = {
+  new: 'Mới',
+  preparing: 'Đang làm',
+  done: 'Hoàn thành',
+  cancelled: 'Đã hủy',
+};
 const TABS = [
   ['todo', 'Cần làm'],
   ['unpaid', 'Chờ thanh toán'],
@@ -13,12 +18,19 @@ const TABS = [
   ['all', 'Tất cả'],
 ];
 
-const matches = (o, tab) => {
-  if (tab === 'todo') return o.payment_status === 'paid' && ['new', 'preparing'].includes(o.status);
-  if (tab === 'unpaid') return o.payment_status === 'unpaid' && ['new', 'preparing'].includes(o.status);
+const matches = (order, tab) => {
+  if (tab === 'todo') {
+    return order.payment_status === 'paid' && ['new', 'preparing'].includes(order.status);
+  }
+  if (tab === 'unpaid') {
+    return order.payment_status === 'unpaid' && ['new', 'preparing'].includes(order.status);
+  }
   if (tab === 'all') return true;
-  return o.status === tab;
+  return order.status === tab;
 };
+
+const orderDate = (value) =>
+  new Date(value.endsWith('Z') ? value : `${value}Z`);
 
 const beep = () => {
   try {
@@ -29,119 +41,221 @@ const beep = () => {
     osc.start();
     osc.stop(ctx.currentTime + 0.25);
   } catch {
-    /* audio unavailable */
+    // Audio can be unavailable or blocked by the browser.
   }
 };
 
 function Orders() {
   const [orders, setOrders] = useState([]);
   const [tab, setTab] = useState('todo');
+  const [search, setSearch] = useState('');
   const [fresh, setFresh] = useState(new Set());
   const [toast, setToast] = useState('');
+  const [error, setError] = useState('');
   const seen = useRef(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/orders`);
-      const data = await res.json();
-      const paidNew = data.filter((o) => o.payment_status === 'paid' && o.status === 'new');
+      const response = await fetch(`${API_URL}/orders`);
+      if (!response.ok) throw new Error('Không thể tải đơn hàng.');
+      const data = await response.json();
+      const paidNew = data.filter(
+        (order) => order.payment_status === 'paid' && order.status === 'new'
+      );
       if (seen.current === null) {
-        seen.current = new Set(paidNew.map((o) => o.id));
+        seen.current = new Set(paidNew.map((order) => order.id));
       } else {
-        const added = paidNew.filter((o) => !seen.current.has(o.id));
+        const added = paidNew.filter((order) => !seen.current.has(order.id));
         if (added.length) {
-          added.forEach((o) => seen.current.add(o.id));
-          setFresh((f) => new Set([...f, ...added.map((o) => o.id)]));
-          setToast(`Có ${added.length} đơn mới đã chuyển khoản: ${added.map((o) => o.code).join(', ')}`);
+          added.forEach((order) => seen.current.add(order.id));
+          setFresh((current) => new Set([...current, ...added.map((order) => order.id)]));
+          setToast(
+            `Có ${added.length} đơn mới đã chuyển khoản: ${added.map((order) => order.code).join(', ')}`
+          );
           beep();
-          setTimeout(() => setToast(''), 6000);
+          window.setTimeout(() => setToast(''), 6000);
         }
       }
       setOrders(data);
+      setError('');
       window.dispatchEvent(new Event('orders-updated'));
     } catch {
-      /* keep previous list on network error */
+      setError('Không tải được đơn hàng. Vui lòng kiểm tra kết nối và thử lại.');
     }
   }, []);
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
+    const id = window.setInterval(load, 8000);
+    return () => window.clearInterval(id);
   }, [load]);
 
-  const patch = async (o, body) => {
-    await fetch(`${API_URL}/orders/${o.id}`, { method: 'PATCH', headers: json, body: JSON.stringify(body) });
-    load();
+  const patch = async (order, body) => {
+    try {
+      const response = await fetch(`${API_URL}/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: json,
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error('Không thể cập nhật đơn hàng.');
+      await load();
+    } catch {
+      setError('Cập nhật đơn hàng thất bại. Vui lòng thử lại.');
+    }
   };
 
-  const list = orders.filter((o) => matches(o, tab));
+  const visibleOrders = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('vi');
+    return orders.filter((order) => {
+      const matchesSearch =
+        !query ||
+        [order.code, order.customer_name, order.phone]
+          .some((value) => (value || '').toLocaleLowerCase('vi').includes(query));
+      return matches(order, tab) && matchesSearch;
+    });
+  }, [orders, search, tab]);
+
+  const openOrders = orders.filter((order) => ['new', 'preparing'].includes(order.status));
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayValue = orders
+    .filter((order) => orderDate(order.created_at) >= startOfToday)
+    .reduce((total, order) => total + Number(order.total || 0), 0);
 
   return (
     <main className='wsite'>
-      {toast && <div className='toast'>🔔 {toast}</div>}
-      <div className='wsite-head'>
-        <h1>Đơn hàng</h1>
-        <div className='tabs'>
-          {TABS.map(([k, label]) => (
-            <button key={k} className={`btn ${tab === k ? 'active' : ''}`} onClick={() => setTab(k)}>
-              {label} ({orders.filter((o) => matches(o, k)).length})
-            </button>
-          ))}
+      {toast && <div className='toast' role='status'>🔔 {toast}</div>}
+      <header className='wsite-page-head'>
+        <div>
+          <span className='wsite-eyebrow'>QUẢN LÝ BÁN HÀNG</span>
+          <h1>Đơn hàng</h1>
         </div>
-      </div>
-      {list.length === 0 && <p>Không có đơn hàng.</p>}
-      <div className='wsite-grid'>
-        {list.map((o) => (
-          <div className={`order ${fresh.has(o.id) ? 'fresh' : ''}`} key={o.id}>
-            <div className='order-top'>
-              <strong>{o.code}</strong>
-              <span>
-                <span className={`pill ${o.payment_status}`}>
-                  {o.payment_status === 'paid' ? 'Đã chuyển khoản' : o.payment_method === 'cod' ? 'Thu tiền mặt' : 'Chưa thanh toán'}
-                </span>{' '}
-                <span className={`pill ${o.status}`}>{STATUS[o.status]}</span>
-              </span>
-            </div>
-            <small>{new Date(o.created_at + 'Z').toLocaleString('vi-VN')}</small>
-            <div>
-              {o.customer_name} · {o.phone}
-              {o.address && <small>{o.address}</small>}
-              {o.note && <small>Ghi chú: {o.note}</small>}
-            </div>
-            <ul>
-              {o.items.map((i) => (
-                <li key={i.id}>
-                  {i.quantity} × {i.name}
-                </li>
-              ))}
-            </ul>
-            <strong>Tổng: {money(o.total)}</strong>
-            <div className='wsite-actions'>
-              {o.payment_status !== 'paid' && o.status !== 'cancelled' && (
-                <button className='btn ok' onClick={() => patch(o, { payment_status: 'paid' })}>
-                  Xác nhận đã thu tiền
-                </button>
-              )}
-              {o.status === 'new' && (
-                <button className='btn primary' onClick={() => patch(o, { status: 'preparing' })}>
-                  Nhận làm
-                </button>
-              )}
-              {o.status === 'preparing' && (
-                <button className='btn ok' onClick={() => patch(o, { status: 'done' })}>
-                  Hoàn thành
-                </button>
-              )}
-              {['new', 'preparing'].includes(o.status) && (
-                <button className='btn danger' onClick={() => patch(o, { status: 'cancelled' })}>
-                  Hủy
-                </button>
-              )}
-            </div>
+        <span className='wsite-sync-status'><i /> Đồng bộ website đang bật</span>
+      </header>
+
+      <section className='wsite-stats' aria-label='Tổng quan đơn hàng'>
+        <article className='wsite-stat'>
+          <span>Tổng đơn hàng</span>
+          <strong>{orders.length}</strong>
+          <small>Trong hệ thống</small>
+        </article>
+        <article className='wsite-stat'>
+          <span>Đơn đang xử lý</span>
+          <strong>{openOrders.length}</strong>
+          <small>Đang chờ hoàn tất</small>
+        </article>
+        <article className='wsite-stat'>
+          <span>Giá trị hôm nay</span>
+          <strong>{money(todayValue)}</strong>
+          <small>Tính theo ngày hiện tại</small>
+        </article>
+      </section>
+
+      <section className='wsite-table-card'>
+        <div className='wsite-table-head orders-table-head'>
+          <div>
+            <h2>Danh sách đơn hàng</h2>
+            <p>Đơn hàng được cập nhật tự động từ website</p>
           </div>
-        ))}
-      </div>
+          <label className='wsite-search'>
+            <span aria-hidden='true'>⌕</span>
+            <input
+              aria-label='Tìm đơn hàng'
+              placeholder='Tìm theo mã, tên hoặc số điện thoại'
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+        </div>
+        <div className='orders-toolbar'>
+          <div className='tabs' role='tablist' aria-label='Lọc đơn hàng'>
+            {TABS.map(([key, label]) => (
+              <button
+                key={key}
+                role='tab'
+                aria-selected={tab === key}
+                className={`btn ${tab === key ? 'active' : ''}`}
+                onClick={() => setTab(key)}
+              >
+                {label} ({orders.filter((order) => matches(order, key)).length})
+              </button>
+            ))}
+          </div>
+          {error && <p className='wsite-error' role='alert'>{error}</p>}
+        </div>
+        <div className='wsite-table-scroll'>
+          <table className='wsite-table orders-table'>
+            <thead>
+              <tr>
+                <th>ĐƠN HÀNG</th>
+                <th>CHI TIẾT</th>
+                <th>TRẠNG THÁI</th>
+                <th>TỔNG TIỀN</th>
+                <th>THAO TÁC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleOrders.map((order) => (
+                <tr className={fresh.has(order.id) ? 'is-fresh' : ''} key={order.id}>
+                  <td>
+                    <strong>{order.customer_name}</strong>
+                    <small>#{order.code}</small>
+                    <small>{order.phone}</small>
+                  </td>
+                  <td>
+                    <span>{order.address ? 'Giao tận nơi' : 'Đến lấy'} · {order.items.length} món</span>
+                    <small title={order.items.map((item) => `${item.quantity} × ${item.name}`).join(', ')}>
+                      {order.items.map((item) => `${item.quantity} × ${item.name}`).join(', ')}
+                    </small>
+                    <small>{orderDate(order.created_at).toLocaleString('vi-VN')}</small>
+                  </td>
+                  <td>
+                    <span className={`pill ${order.status}`}>{STATUS[order.status] || order.status}</span>
+                    <small>
+                      <span className={`pill ${order.payment_status}`}>
+                        {order.payment_status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                      </span>
+                    </small>
+                  </td>
+                  <td><strong className='order-total'>{money(order.total)}</strong></td>
+                  <td>
+                    <div className='order-row-actions'>
+                      {order.payment_status !== 'paid' && order.status !== 'cancelled' && (
+                        <button className='btn ok' onClick={() => patch(order, { payment_status: 'paid' })}>
+                          Xác nhận thu tiền
+                        </button>
+                      )}
+                      {order.status !== 'done' && order.status !== 'cancelled' && (
+                        <select
+                          aria-label={`Cập nhật trạng thái đơn ${order.code}`}
+                          value={order.status}
+                          onChange={(event) => patch(order, { status: event.target.value })}
+                        >
+                          <option value='new'>Mới</option>
+                          <option value='preparing'>Đang làm</option>
+                          <option value='done'>Hoàn thành</option>
+                          <option value='cancelled'>Đã hủy</option>
+                        </select>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {visibleOrders.length === 0 && (
+                <tr>
+                  <td className='wsite-empty' colSpan='5'>
+                    {orders.length ? 'Không có đơn hàng phù hợp.' : 'Chưa có đơn hàng.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <footer className='wsite-table-footer'>
+          Hiển thị {visibleOrders.length} / {orders.length} đơn hàng
+          <span>Thực đơn nhà hàng · Đang hoạt động</span>
+        </footer>
+      </section>
     </main>
   );
 }
