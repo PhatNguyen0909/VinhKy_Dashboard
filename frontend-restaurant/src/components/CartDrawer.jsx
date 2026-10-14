@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useRestaurant } from "../context/RestaurantContext.jsx";
 import { API_URL } from "../hooks/useMenu.js";
 import { formatPrice } from "./ProductCard.jsx";
 
@@ -10,6 +12,7 @@ export default function CartDrawer({
   onQuantityChange,
   onRemove,
   onOrderPlaced,
+  onLoginRequest,
 }) {
   const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
   const [method, setMethod] = useState("transfer");
@@ -37,21 +40,39 @@ export default function CartDrawer({
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [isOpen, onClose]);
 
+  const restaurant = useRestaurant();
+  const { customer, token } = useAuth();
   const bank = {
-    id: import.meta.env.VITE_BANK_ID,
-    account: import.meta.env.VITE_BANK_ACCOUNT,
-    owner: import.meta.env.VITE_BANK_OWNER,
+    id: restaurant.bank_id || "ACB",
+    account: restaurant.bank_account || "4914991",
+    owner: restaurant.bank_owner || "NGUYEN HUU VINH PHAT",
   };
+
+  useEffect(() => {
+    if (!customer) return;
+    setForm((current) => ({
+      ...current,
+      name: current.name || customer.name || "",
+      phone: current.phone || customer.phone || "",
+      address: current.address || customer.address || "",
+    }));
+  }, [customer]);
+
   const setField = (key) => (event) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
 
   const submitOrder = async (event) => {
     event.preventDefault();
+    if (!customer) {
+      setError("Vui lòng đăng nhập để đặt món.");
+      onLoginRequest();
+      return;
+    }
     if (!form.name.trim() || !form.phone.trim()) {
       setError("Vui lòng nhập tên và số điện thoại.");
       return;
     }
-    if (method === "cod" && !form.address.trim()) {
+    if (form.address.trim().length < 3) {
       setError("Vui lòng nhập địa chỉ giao hàng.");
       return;
     }
@@ -60,14 +81,16 @@ export default function CartDrawer({
     try {
       const response = await fetch(`${API_URL}/orders`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           customer_name: form.name.trim(),
           phone: form.phone.trim(),
           address: form.address.trim(),
           note: form.note.trim(),
           payment_method: method,
-          payment_status: method === "transfer" ? "paid" : "unpaid",
           items: items.map(([, item]) => ({
             name: item.name,
             price: item.price,
@@ -144,28 +167,35 @@ export default function CartDrawer({
             </button>
           </div>
         ) : items.length > 0 && step === "checkout" ? (
-          <form className="cart-footer" onSubmit={submitOrder}>
+          <form className="cart-footer checkout-form" onSubmit={submitOrder}>
             <div className="cart-total">
               <span>Cần thanh toán</span>
               <strong>{formatPrice(total)}</strong>
             </div>
-            <input placeholder="Họ tên *" value={form.name} onChange={setField("name")} />
-            <input placeholder="Số điện thoại *" value={form.phone} onChange={setField("phone")} inputMode="tel" />
-            <input placeholder="Địa chỉ giao hàng" value={form.address} onChange={setField("address")} />
+            {!customer && (
+              <button className="text-link login-hint" onClick={onLoginRequest} type="button">
+                Đăng nhập để lưu thông tin & xem lịch sử đơn →
+              </button>
+            )}
+            <div className="field-grid"><input placeholder="Họ tên *" value={form.name} onChange={setField("name")} />
+            <input placeholder="Số điện thoại *" value={form.phone} onChange={setField("phone")}             inputMode="tel" /></div>
+            <input placeholder="Địa chỉ giao hàng *" value={form.address} onChange={setField("address")} />
             <input placeholder="Ghi chú" value={form.note} onChange={setField("note")} />
-            <label>
-              <input type="radio" checked={method === "transfer"} onChange={() => setMethod("transfer")} /> Chuyển khoản
-            </label>
-            <label>
-              <input type="radio" checked={method === "cod"} onChange={() => setMethod("cod")} /> Thanh toán khi nhận hàng
-            </label>
+            <div className="pay-options">
+              <label className={method === "transfer" ? "is-selected" : ""}>
+                <input type="radio" checked={method === "transfer"} onChange={() => setMethod("transfer")} /> Chuyển khoản
+              </label>
+              <label className={method === "cod" ? "is-selected" : ""}>
+                <input type="radio" checked={method === "cod"} onChange={() => setMethod("cod")} /> Thanh toán khi nhận
+              </label>
+            </div>
             {method === "transfer" && (
-              <div>
+              <div className="transfer-box">
                 {bank.id && bank.account ? (
                   <>
                     <img
+                      className="qr-img"
                       alt="Mã QR chuyển khoản"
-                      style={{ width: "100%", maxWidth: 260 }}
                       src={`https://img.vietqr.io/image/${bank.id}-${bank.account}-compact.png?amount=${total}&addInfo=${encodeURIComponent(`Vinh Ky ${form.phone}`)}&accountName=${encodeURIComponent(bank.owner || "")}`}
                     />
                     <small>
@@ -176,13 +206,13 @@ export default function CartDrawer({
                   <small>Nhà hàng sẽ gửi thông tin chuyển khoản qua điện thoại.</small>
                 )}
                 <small>
-                  Sau khi chuyển khoản xong, bấm &quot;Tôi đã chuyển khoản&quot; để nhà hàng nhận đơn.
+                  Chuyển khoản đúng số tiền và nội dung, sau đó bấm &quot;Xác nhận đặt hàng&quot;. Nhà hàng sẽ đối soát và xác nhận thanh toán.
                 </small>
               </div>
             )}
-            {error && <small role="alert">{error}</small>}
+            {error && <small className="form-error" role="alert">{error}</small>}
             <button className="button button--primary checkout-button" disabled={busy} type="submit">
-              {busy ? "Đang gửi..." : method === "transfer" ? "Tôi đã chuyển khoản" : "Đặt hàng"}
+              {busy ? "Đang gửi..." : "Xác nhận đặt hàng"}
             </button>
             <button className="text-link" onClick={() => setStep("cart")} type="button">
               ← Quay lại giỏ hàng
@@ -230,11 +260,20 @@ export default function CartDrawer({
               </div>
               <button
                 className="button button--primary checkout-button"
-                onClick={() => setStep("checkout")}
+                onClick={() => {
+                  if (!customer) {
+                    setError("Vui lòng đăng nhập để đặt món.");
+                    onLoginRequest();
+                    return;
+                  }
+                  setError("");
+                  setStep("checkout");
+                }}
                 type="button"
               >
                 Đặt món <span>↗</span>
               </button>
+              {!customer && error && <small className="form-error" role="alert">{error}</small>}
               <small>
                 Chọn chuyển khoản hoặc thanh toán khi nhận hàng ở bước tiếp theo.
               </small>

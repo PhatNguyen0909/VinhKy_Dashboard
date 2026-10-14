@@ -1,27 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AuthModal from "./components/AuthModal.jsx";
 import CartDrawer from "./components/CartDrawer.jsx";
 import SiteHeader from "./components/SiteHeader.jsx";
 import Toast from "./components/Toast.jsx";
 import HomePage from "./pages/HomePage.jsx";
-import { combos, products as staticProducts } from "./data/menu.js";
 import useMenu from "./hooks/useMenu.js";
-
-const fixedItems = {
-  ...Object.fromEntries(staticProducts.filter((p) => p.id === "combo").map((p) => [p.id, p])),
-  "group-combo": { id: "group-combo", ...combos.group },
-};
 
 export default function App() {
   const menu = useMenu();
   const productLookup = useMemo(
-    () => ({
-      ...Object.fromEntries(menu.products.map((product) => [product.id, product])),
-      ...fixedItems,
-    }),
+    () => Object.fromEntries(menu.products.map((product) => [product.id, product])),
     [menu.products],
   );
   const [cart, setCart] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [toast, setToast] = useState({ message: "", visible: false });
   const cartCount = Object.values(cart).reduce(
     (sum, item) => sum + item.quantity,
@@ -75,7 +68,11 @@ export default function App() {
 
   return (
     <>
-      <SiteHeader cartCount={cartCount} onCartOpen={() => setCartOpen(true)} />
+      <SiteHeader
+        cartCount={cartCount}
+        onCartOpen={() => setCartOpen(true)}
+        onAuthOpen={() => setAuthOpen(true)}
+      />
       <HomePage onAdd={addToCart} menu={menu} />
       <CartDrawer
         cart={cart}
@@ -85,7 +82,9 @@ export default function App() {
         onQuantityChange={changeQuantity}
         onRemove={removeFromCart}
         onOrderPlaced={() => setCart({})}
+        onLoginRequest={() => setAuthOpen(true)}
       />
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <Toast message={toast.message} visible={toast.visible} />
     </>
   );

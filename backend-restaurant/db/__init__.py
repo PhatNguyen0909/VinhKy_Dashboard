@@ -106,6 +106,20 @@ def ensure_product_availability_column() -> None:
         )
 
 
+def ensure_order_customer_column() -> None:
+    inspector = inspect(engine)
+    if "orders" not in inspector.get_table_names():
+        return
+    if any(c["name"] == "customer_id" for c in inspector.get_columns("orders")):
+        return
+
+    table_name = engine.dialect.identifier_preparer.quote("orders")
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            f"ALTER TABLE {table_name} ADD COLUMN customer_id INTEGER NULL"
+        )
+
+
 def get_db():
     db = SessionLocal()
     try:

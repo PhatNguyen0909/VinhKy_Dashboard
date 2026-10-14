@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useRestaurant } from "../context/RestaurantContext.jsx";
 
 const links = [
   ["Trang chủ", "#home"],
@@ -8,15 +10,13 @@ const links = [
 ];
 
 function Brand() {
+  const { name, tagline, logo } = useRestaurant();
   return (
-    <a className="brand" href="#home" aria-label="Vĩnh Ký - Trang chủ">
-      <span className="mascot mascot--small" aria-hidden="true">
-        <i />
-        <b>•ᴗ•</b>
-      </span>
+    <a className="brand" href="#home" aria-label={`${name} - Trang chủ`}>
+      <img className="brand-logo" src={logo} alt="" />
       <span className="brand-copy">
-        <strong>Vĩnh Ký</strong>
-        <small>CƠM GÀ · MÌ XÀO GIÒN</small>
+        <strong>{name}</strong>
+        <small>{(tagline || "").toUpperCase()}</small>
       </span>
     </a>
   );
@@ -31,8 +31,32 @@ function SearchIcon() {
   );
 }
 
-export default function SiteHeader({ cartCount, onCartOpen }) {
+export default function SiteHeader({ cartCount, onCartOpen, onAuthOpen }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { customer } = useAuth();
+  const [active, setActive] = useState("#home");
+
+  useEffect(() => {
+    const update = () => {
+      const line = window.scrollY + 140;
+      let current = links[0][1];
+      links.forEach(([, href]) => {
+        const el = document.querySelector(href);
+        if (el && el.getBoundingClientRect().top + window.scrollY <= line) current = href;
+      });
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        current = links[links.length - 1][1];
+      }
+      setActive(current);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   const focusMenuSearch = () => {
     document.querySelector("#menu")?.scrollIntoView({ behavior: "smooth" });
@@ -48,9 +72,9 @@ export default function SiteHeader({ cartCount, onCartOpen }) {
         className={`main-nav${menuOpen ? " is-open" : ""}`}
         aria-label="Điều hướng chính"
       >
-        {links.map(([label, href], index) => (
+        {links.map(([label, href]) => (
           <a
-            className={`nav-link${index === 0 ? " is-current" : ""}`}
+            className={`nav-link${active === href ? " is-current" : ""}`}
             href={href}
             key={href}
             onClick={closeMenu}
@@ -83,6 +107,18 @@ export default function SiteHeader({ cartCount, onCartOpen }) {
           <span className="cart-count" aria-live="polite">
             {cartCount}
           </span>
+        </button>
+        <button
+          className="user-button"
+          onClick={onAuthOpen}
+          title={customer ? "Tài khoản" : "Đăng nhập"}
+          type="button"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+          </svg>
+          <span>{customer ? customer.name.split(" ").pop() : "Đăng nhập"}</span>
         </button>
         <a className="button button--primary header-order" href="#menu">
           Đặt món ngay <span aria-hidden="true">↗</span>

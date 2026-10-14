@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { useRestaurant } from "../context/RestaurantContext.jsx";
 import ProductCard from "./ProductCard.jsx";
 
 export default function MenuSection({ onAdd, menu }) {
+  const restaurant = useRestaurant();
   const { categories, products } = menu;
   const [activeCategory, setActiveCategory] = useState("all");
   const [query, setQuery] = useState("");
@@ -16,6 +18,15 @@ export default function MenuSection({ onAdd, menu }) {
       return matchesCategory && matchesQuery;
     });
   }, [activeCategory, query, products]);
+
+  const selectCategory = (id) => {
+    setActiveCategory(id);
+    setQuery("");
+    window.setTimeout(
+      () => document.getElementById("popular")?.scrollIntoView({ behavior: "smooth" }),
+      30,
+    );
+  };
 
   return (
     <>
@@ -49,7 +60,7 @@ export default function MenuSection({ onAdd, menu }) {
               className={`category-chip${activeCategory === category.id ? " is-active" : ""}`}
               data-category={category.id}
               key={category.id}
-              onClick={() => setActiveCategory(category.id)}
+              onClick={() => selectCategory(category.id)}
               role="tab"
               aria-selected={activeCategory === category.id}
               type="button"
@@ -72,16 +83,14 @@ export default function MenuSection({ onAdd, menu }) {
             </a>
           </div>
           <div className="feature-images">
-            <img
-              src="https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&w=650&q=85"
-              alt="Cơm gà ăn kèm rau và nước chấm"
-              loading="lazy"
-            />
-            <img
-              src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=85"
-              alt="Mì xào thơm ngon"
-              loading="lazy"
-            />
+            {[products[0], products[1]].map((p, i) => (
+              <img
+                key={p?.id || i}
+                src={p?.image || restaurant.heroImage}
+                alt={p?.name || restaurant.name}
+                loading="lazy"
+              />
+            ))}
             <span className="feature-stamp">
               TƯƠI NGON
               <br />

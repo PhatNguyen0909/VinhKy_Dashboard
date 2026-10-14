@@ -48,6 +48,7 @@ function Menu() {
   const [form, setForm] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [availabilitySaving, setAvailabilitySaving] = useState(null);
 
   const load = useCallback(async () => {
@@ -385,14 +386,30 @@ function Menu() {
                   onChange={async (event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
+                    setUploading(true);
+                    setError('');
                     try {
-                      set('image', await resizeImage(file));
-                      setError('');
-                    } catch {
-                      setError('Không đọc được ảnh. Vui lòng chọn tệp ảnh khác.');
+                      const dataUrl = await resizeImage(file);
+                      const response = await fetch(`${API_URL}/uploads/image`, {
+                        method: 'POST',
+                        headers: json,
+                        body: JSON.stringify({ image: dataUrl }),
+                      });
+                      if (!response.ok) {
+                        const detail = await response.json().catch(() => ({}));
+                        throw new Error(detail.detail || 'Tải ảnh lên thất bại.');
+                      }
+                      const { url } = await response.json();
+                      set('image', url);
+                    } catch (uploadError) {
+                      setError(uploadError.message || 'Không tải được ảnh. Vui lòng thử lại.');
+                    } finally {
+                      setUploading(false);
+                      event.target.value = '';
                     }
                   }}
                 />
+                {uploading && <small>Đang tải ảnh lên Cloudinary...</small>}
               </label>
               {form.image && (
                 <div className='wsite-image-preview'>
@@ -432,7 +449,7 @@ function Menu() {
               {error && <p className='wsite-error full' role='alert'>{error}</p>}
               <div className='wsite-modal-actions full'>
                 <button className='btn' type='button' onClick={() => setForm(null)}>Hủy</button>
-                <button className='btn primary' type='submit' disabled={saving || categories.length === 0}>
+                <button className='btn primary' type='submit' disabled={saving || uploading || categories.length === 0}>
                   {saving ? 'Đang lưu...' : form.id ? 'Lưu thay đổi' : 'Thêm món ăn'}
                 </button>
               </div>

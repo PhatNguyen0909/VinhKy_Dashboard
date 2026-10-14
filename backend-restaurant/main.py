@@ -7,6 +7,7 @@ from db import (
     Base,
     ensure_mysql_utf8mb4,
     ensure_product_availability_column,
+    ensure_order_customer_column,
 )
 from api import expenses
 from api import revenues
@@ -46,11 +47,14 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     ensure_mysql_utf8mb4()
     ensure_product_availability_column()
+    ensure_order_customer_column()
     from db import SessionLocal
     from services.menu_seed import seed_menu
+    from services.restaurant_settings import seed_settings
 
     with SessionLocal() as session:
         seed_menu(session)
+        seed_settings(session)
 
 
 # --------------------------------------------------

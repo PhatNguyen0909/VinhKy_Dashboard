@@ -1,4 +1,9 @@
+import { useRestaurant } from "../context/RestaurantContext.jsx";
+import { formatPrice } from "./ProductCard.jsx";
+
 export default function HeroSection() {
+  const r = useRestaurant();
+  const [headline, ...rest] = (r.hero_title || "").split(". ");
   return (
     <section className="hero section-shell" id="home">
       <div className="hero-copy">
@@ -6,17 +11,14 @@ export default function HeroSection() {
           <span className="eyebrow-flame">♨</span> NÓNG HỔI MỖI NGÀY
         </span>
         <h1>
-          Ngon tròn vị.
+          {rest.length ? `${headline}.` : r.hero_title}
           <br />
-          <em>Ăn là nhớ.</em>
+          <em>{rest.join(". ")}</em>
         </h1>
         <h2>
-          Cơm Gà <span>·</span> Mì Xào Giòn Vĩnh Ký
+          {r.name} <span>·</span> {r.tagline}
         </h2>
-        <p>
-          Món ngon nóng hổi, chế biến mỗi ngày và giao tận nơi. Bữa ăn thân
-          quen, được chăm chút bằng cả tấm lòng.
-        </p>
+        <p>{r.hero_subtitle}</p>
         <div className="hero-buttons">
           <a className="button button--primary" href="#menu">
             Xem thực đơn <span aria-hidden="true">↗</span>
@@ -28,28 +30,23 @@ export default function HeroSection() {
         <div className="hero-proof">
           <div className="proof-rating">
             <span className="stars">★★★★★</span>
-            <strong>4.9/5</strong>
+            <strong>{r.rating}/5</strong>
             <small>Khách hàng yêu thích</small>
           </div>
           <span className="proof-divider" />
           <div className="proof-delivery">
             <span className="delivery-icon">◷</span>
-            <strong>30 phút</strong>
+            <strong>{r.delivery_time}</strong>
             <small>Giao món nóng hổi</small>
           </div>
         </div>
       </div>
-      <div className="hero-art" aria-label="Cơm gà Vĩnh Ký nóng hổi">
+      <div className="hero-art" aria-label={r.name}>
         <div className="hero-ring hero-ring--outer" />
         <div className="hero-ring hero-ring--inner" />
         <span className="hero-spark spark-one">✳</span>
         <span className="hero-spark spark-two">✦</span>
-        <span className="hero-doodle">福</span>
-        <img
-          className="hero-food"
-          src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1000&q=88"
-          alt="Đĩa cơm gà vàng ươm ăn kèm rau xanh"
-        />
+        <img className="hero-food" src={r.heroImage} alt={r.name} />
         <div className="fresh-note">
           <span>♧</span>
           <strong>
@@ -60,12 +57,7 @@ export default function HeroSection() {
         </div>
         <div className="hero-price">
           <span>Vị ngon thân quen</span>
-          <strong>Từ 45.000đ</strong>
-        </div>
-        <div className="mascot mascot--hero" aria-hidden="true">
-          <i />
-          <b>•ᴗ•</b>
-          <span>⌣</span>
+          <strong>Từ {formatPrice(Number(r.min_price) || 0)}</strong>
         </div>
       </div>
       <a className="scroll-cue" href="#menu">
