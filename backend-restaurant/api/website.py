@@ -13,6 +13,7 @@ from services.customer_auth import (
     optional_customer,
     verify_password,
 )
+from services import shipping
 from services.restaurant_settings import get_settings, save_settings
 
 from db import get_db
@@ -135,6 +136,20 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
+class ShippingQuoteIn(BaseModel):
+    address: str
+
+
+@router.post("/shipping/quote")
+def shipping_quote(payload: ShippingQuoteIn, db: Session = Depends(get_db)):
+    try:
+        return shipping.quote(payload.address, get_settings(db)["address"])
+    except shipping.ShippingNotConfigured:
+        return {"distance_km": None, "fee": 0, "configured": False}
+    except shipping.ShippingError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+
 @router.post("/orders", response_model=OrderRead)
 def create_order(
     payload: OrderIn,
@@ -142,6 +157,18 @@ def create_order(
     customer: Optional[Customer] = Depends(optional_customer),
 ):
     now = datetime.utcnow()
+    items = [OrderItem(**item.dict()) for item in payload.items]
+    try:
+        result = shipping.quote(payload.address, get_settings(db)["address"])
+        if result.get("out_of_range"):
+            raise HTTPException(status_code=400, detail="Địa chỉ trên 6 km, vui lòng đặt qua Grab.")
+        fee = result["fee"]
+    except shipping.ShippingNotConfigured:
+        fee = 0
+    except shipping.ShippingError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    if fee:
+        items.append(OrderItem(name="Phí giao hàng", price=fee, quantity=1))
     order = Order(
         code="TMP",
         customer_id=customer.id if customer else None,
@@ -151,9 +178,9 @@ def create_order(
         note=payload.note.strip(),
         payment_method=payload.payment_method,
         payment_status="unpaid",
-        total=sum(item.price * item.quantity for item in payload.items),
+        total=sum(item.price * item.quantity for item in items),
         created_at=now,
-        items=[OrderItem(**item.dict()) for item in payload.items],
+        items=items,
     )
     db.add(order)
     db.flush()

@@ -16,7 +16,7 @@ DEFAULTS: Dict[str, str] = {
     "rating": "4.9",
     "delivery_time": "30 phút",
     "min_price": "45000",
-    "address": "125 Nguyễn Tri Phương, P.7, Q.5, TP.HCM",
+    "address": "340 Tạ Quang Bửu, P. Chánh Hưng, Q.8, TP.HCM",
     "phone": "0901234567",
     "email": "",
     "opening_hours": "10:00 – 21:30",

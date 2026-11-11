@@ -1,8 +1,10 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useRestaurant } from "../context/RestaurantContext.jsx";
 import { API_URL } from "../hooks/useMenu.js";
 import { formatPrice } from "./ProductCard.jsx";
+
+const GRAB_URL = "https://r.grab.com/o/7NFFZv6f";
 
 export default function CartDrawer({
   cart,
@@ -20,11 +22,37 @@ export default function CartDrawer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [placed, setPlaced] = useState(null);
+  const [ship, setShip] = useState({ fee: 0, km: null, loading: false, error: "", far: false });
   const items = Object.entries(cart);
   const total = items.reduce(
     (sum, [, item]) => sum + item.price * item.quantity,
     0,
   );
+  const grandTotal = total + ship.fee;
+
+  useEffect(() => {
+    const address = form.address.trim();
+    if (step !== "checkout" || address.length < 8) {
+      setShip({ fee: 0, km: null, loading: false, error: "", far: false });
+      return undefined;
+    }
+    setShip((current) => ({ ...current, loading: true, error: "" }));
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(`${API_URL}/shipping/quote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Không tính được phí giao hàng.");
+        setShip({ fee: data.fee || 0, km: data.distance_km, loading: false, error: "", far: Boolean(data.out_of_range) });
+      } catch (err) {
+        setShip({ fee: 0, km: null, loading: false, error: err.message });
+      }
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [form.address, step]);
 
   useEffect(() => {
     document.body.classList.toggle("cart-open", isOpen);
@@ -74,6 +102,19 @@ export default function CartDrawer({
     }
     if (form.address.trim().length < 3) {
       setError("Vui lòng nhập địa chỉ giao hàng.");
+      return;
+    }
+    if (ship.loading) {
+      setError("Đang tính phí giao hàng, vui lòng đợi giây lát.");
+      return;
+    }
+    if (ship.far) {
+      window.open(GRAB_URL, "_blank", "noopener");
+      setError("Địa chỉ trên 6 km, vui lòng đặt qua Grab.");
+      return;
+    }
+    if (ship.error) {
+      setError(ship.error);
       return;
     }
     setBusy(true);
@@ -169,8 +210,29 @@ export default function CartDrawer({
         ) : items.length > 0 && step === "checkout" ? (
           <form className="cart-footer checkout-form" onSubmit={submitOrder}>
             <div className="cart-total">
+              <span>Tạm tính</span>
+              <span>{formatPrice(total)}</span>
+            </div>
+            <div className="cart-total">
+              <span>
+                Phí giao hàng{ship.km != null ? ` (${ship.km} km)` : ""}
+              </span>
+              <span>
+                {ship.loading ? "Đang tính..." : ship.km == null ? "—" : ship.fee ? formatPrice(ship.fee) : "Miễn phí"}
+              </span>
+            </div>
+            {ship.error && <small className="form-error" role="alert">{ship.error}</small>}
+            {ship.far && (
+              <div className="form-error" role="alert">
+                Địa chỉ cách nhà hàng {ship.km} km, vượt phạm vi giao hàng 6 km.{" "}
+                <a href={GRAB_URL} target="_blank" rel="noopener noreferrer">
+                  Đặt giao hàng qua Grab →
+                </a>
+              </div>
+            )}
+            <div className="cart-total">
               <span>Cần thanh toán</span>
-              <strong>{formatPrice(total)}</strong>
+              <strong>{formatPrice(grandTotal)}</strong>
             </div>
             {!customer && (
               <button className="text-link login-hint" onClick={onLoginRequest} type="button">
@@ -196,7 +258,7 @@ export default function CartDrawer({
                     <img
                       className="qr-img"
                       alt="Mã QR chuyển khoản"
-                      src={`https://img.vietqr.io/image/${bank.id}-${bank.account}-compact.png?amount=${total}&addInfo=${encodeURIComponent(`Vinh Ky ${form.phone}`)}&accountName=${encodeURIComponent(bank.owner || "")}`}
+                      src={`https://img.vietqr.io/image/${bank.id}-${bank.account}-compact.png?amount=${grandTotal}&addInfo=${encodeURIComponent(`Vinh Ky ${form.phone}`)}&accountName=${encodeURIComponent(bank.owner || "")}`}
                     />
                     <small>
                       {bank.id} · {bank.account} · {bank.owner}
