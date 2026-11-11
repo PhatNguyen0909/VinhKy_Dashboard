@@ -7,10 +7,16 @@ class CategoryIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
 
 
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=120)
+    is_active: Optional[bool] = None
+
+
 class CategoryRead(BaseModel):
     id: int
     name: str
     sort_order: int = 0
+    is_active: bool = True
 
     class Config:
         from_attributes = True

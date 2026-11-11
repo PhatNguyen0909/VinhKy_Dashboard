@@ -6,6 +6,7 @@ from db import (
     engine,
     Base,
     ensure_mysql_utf8mb4,
+    ensure_category_active_column,
     ensure_product_availability_column,
     ensure_order_customer_column,
 )
@@ -46,6 +47,7 @@ app = create_app()
 def on_startup():
     Base.metadata.create_all(bind=engine)
     ensure_mysql_utf8mb4()
+    ensure_category_active_column()
     ensure_product_availability_column()
     ensure_order_customer_column()
     from db import SessionLocal

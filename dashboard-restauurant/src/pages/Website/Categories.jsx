@@ -12,6 +12,7 @@ function Categories() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -48,6 +49,7 @@ function Categories() {
   const associatedProducts = modal
     ? products.filter((product) => product.category_id === modal.id)
     : [];
+  const activeCount = categories.filter((category) => category.is_active !== false).length;
 
   const openModal = (category = null) => {
     setModal(category ? { id: category.id } : { id: null });
@@ -100,6 +102,27 @@ function Categories() {
     }
   };
 
+  const toggleStatus = async (category) => {
+    setStatusSaving(category.id);
+    setError('');
+    try {
+      const response = await fetch(`${API_URL}/categories/${category.id}`, {
+        method: 'PATCH',
+        headers: json,
+        body: JSON.stringify({ is_active: category.is_active === false }),
+      });
+      if (!response.ok) throw new Error('Không thể cập nhật trạng thái danh mục.');
+      const updatedCategory = await response.json();
+      setCategories((current) =>
+        current.map((item) => item.id === updatedCategory.id ? updatedCategory : item)
+      );
+    } catch (statusError) {
+      setError(statusError.message || 'Cập nhật trạng thái danh mục thất bại.');
+    } finally {
+      setStatusSaving(null);
+    }
+  };
+
   return (
     <main className='wsite'>
       <header className='wsite-page-head'>
@@ -120,8 +143,8 @@ function Categories() {
         </article>
         <article className='wsite-stat'>
           <span>Đang sử dụng</span>
-          <strong>{categories.length}</strong>
-          <small>Danh mục hiện có</small>
+          <strong>{activeCount}</strong>
+          <small>Danh mục đang hiển thị trên website</small>
         </article>
         <article className='wsite-stat'>
           <span>Tổng món ăn</span>
@@ -177,7 +200,19 @@ function Categories() {
                         {count} món ăn · Xem danh sách
                       </button>
                     </td>
-                    <td><span className='wsite-status is-active'>Đang dùng</span></td>
+                    <td>
+                      <button
+                        className={`wsite-status-button ${category.is_active === false ? 'is-unavailable' : 'is-available'}`}
+                        disabled={statusSaving === category.id}
+                        onClick={() => toggleStatus(category)}
+                        title={category.is_active === false ? 'Bật danh mục và hiển thị lại các món' : 'Tắt danh mục và ẩn các món'}
+                        type='button'
+                      >
+                        {statusSaving === category.id
+                          ? 'Đang lưu...'
+                          : category.is_active === false ? 'Đã tắt' : 'Đang dùng'}
+                      </button>
+                    </td>
                     <td>
                       <div className='wsite-icon-actions'>
                         <button

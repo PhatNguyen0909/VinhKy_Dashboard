@@ -32,19 +32,21 @@ export default function useMenu() {
     ])
       .then(([cats, prods]) => {
         if (!Array.isArray(cats) || !Array.isArray(prods)) throw new Error("bad");
+        const activeCategories = cats.filter((category) => category.is_active !== false);
+        const activeCategoryIds = new Set(activeCategories.map((category) => category.id));
         setMenu({
           loading: false,
           failed: false,
           categories: [
             { id: "all", label: "Tất cả món", icon: "✦" },
-            ...cats.map((c, i) => ({
+            ...activeCategories.map((c, i) => ({
               id: `c-${c.id}`,
               label: c.name,
               icon: icons[i % icons.length],
             })),
           ],
           products: prods
-            .filter((p) => p.is_available !== false)
+            .filter((p) => p.is_available !== false && activeCategoryIds.has(p.category_id))
             .map((p) => ({
               id: `p-${p.id}`,
               name: p.name,
