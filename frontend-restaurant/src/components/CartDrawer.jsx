@@ -130,7 +130,14 @@ export default function CartDrawer({
           customer_name: form.name.trim(),
           phone: form.phone.trim(),
           address: form.address.trim(),
-          note: form.note.trim(),
+          note: [
+            form.note.trim(),
+            ...items
+              .filter(([, item]) => item.note)
+              .map(([, item]) => `${item.name}: ${item.note}`),
+          ]
+            .filter(Boolean)
+            .join("\n"),
           payment_method: method,
           items: items.map(([, item]) => ({
             name: item.name,
@@ -285,7 +292,10 @@ export default function CartDrawer({
             <div className="cart-items">
               {items.map(([id, item]) => (
                 <div className="cart-row" key={id}>
-                  <strong>{item.name}</strong>
+                  <div>
+                    <strong>{item.name}</strong>
+                    {item.note && <small className="cart-item-note">Ghi chú: {item.note}</small>}
+                  </div>
                   <span>{formatPrice(item.price * item.quantity)}</span>
                   <div className="cart-row-controls">
                     <button

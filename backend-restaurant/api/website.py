@@ -22,6 +22,7 @@ from schemas.website import (
     AuthResponse,
     CategoryIn,
     CategoryRead,
+    CategoryUpdate,
     CustomerLogin,
     CustomerRead,
     CustomerRegister,
@@ -67,11 +68,15 @@ def create_category(payload: CategoryIn, db: Session = Depends(get_db)):
 
 
 @router.patch("/categories/{category_id}", response_model=CategoryRead)
-def update_category(category_id: int, payload: CategoryIn, db: Session = Depends(get_db)):
+def update_category(category_id: int, payload: CategoryUpdate, db: Session = Depends(get_db)):
     category = db.get(Category, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    category.name = payload.name.strip()
+    updates = payload.dict(exclude_unset=True)
+    if "name" in updates:
+        category.name = updates["name"].strip()
+    if "is_active" in updates and updates["is_active"] is not None:
+        category.is_active = updates["is_active"]
     db.commit()
     db.refresh(category)
     return category

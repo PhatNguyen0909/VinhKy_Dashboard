@@ -18,6 +18,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(120), nullable=False)
     sort_order = Column(Integer, default=0)
+    is_active = Column(Boolean, nullable=False, default=True, server_default=true())
 
     products = relationship(
         "Product", back_populates="category", cascade="all, delete-orphan"
