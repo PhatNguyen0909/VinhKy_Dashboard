@@ -12,7 +12,7 @@ export default function HomePage({ onAdd, menu }) {
       <main>
         <HeroSection />
         <MenuSection onAdd={onAdd} menu={menu} />
-        <ComboSection onAdd={onAdd} />
+        <ComboSection onAdd={onAdd} menu={menu} />
         <ReasonsSection />
         <StorySection />
         <VisitSection />

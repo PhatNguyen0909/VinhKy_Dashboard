@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
-import {
-  categories as staticCategories,
-  products as staticProducts,
-} from "../data/menu.js";
 
-export const API_URL = (
+const configuredApiUrl = (
   import.meta.env.VITE_API_URL || "http://localhost:8000/api"
-).replace(/\/$/, "");
+)
+  .trim()
+  .replace(/\/+$/, "");
+
+export const API_URL = configuredApiUrl.endsWith("/api")
+  ? configuredApiUrl
+  : `${configuredApiUrl}/api`;
 
 const icons = ["🍚", "🍜", "🥢", "🍱", "🥤"];
 
 export default function useMenu() {
   const [menu, setMenu] = useState({
-    categories: staticCategories,
-    products: staticProducts,
+    categories: [{ id: "all", label: "Tất cả món", icon: "✦" }],
+    products: [],
+    loading: true,
+    failed: false,
   });
 
   useEffect(() => {
@@ -27,8 +31,10 @@ export default function useMenu() {
       ),
     ])
       .then(([cats, prods]) => {
-        if (!Array.isArray(cats) || !Array.isArray(prods) || !cats.length) return;
+        if (!Array.isArray(cats) || !Array.isArray(prods)) throw new Error("bad");
         setMenu({
+          loading: false,
+          failed: false,
           categories: [
             { id: "all", label: "Tất cả món", icon: "✦" },
             ...cats.map((c, i) => ({
@@ -53,7 +59,10 @@ export default function useMenu() {
             })),
         });
       })
-      .catch(() => {});
+      .catch((error) => {
+        if (error.name === "AbortError") return;
+        setMenu((current) => ({ ...current, loading: false, failed: true }));
+      });
     return () => controller.abort();
   }, []);
 

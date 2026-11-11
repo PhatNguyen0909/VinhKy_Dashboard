@@ -1,36 +1,48 @@
+import { useRestaurant } from "../context/RestaurantContext.jsx";
+
 function Brand() {
+  const { name, tagline, logo } = useRestaurant();
   return (
     <a className="brand" href="#home">
-      <span className="mascot mascot--small" aria-hidden="true">
-        <i />
-        <b>•ᴗ•</b>
-      </span>
+      <img className="brand-logo" src={logo} alt="" />
       <span className="brand-copy">
-        <strong>Vĩnh Ký</strong>
-        <small>CƠM GÀ · MÌ XÀO GIÒN</small>
+        <strong>{name}</strong>
+        <small>{(tagline || "").toUpperCase()}</small>
       </span>
     </a>
   );
 }
 
 export default function SiteFooter() {
+  const r = useRestaurant();
+  const socials = [
+    ["f", "Facebook", r.facebook_url],
+    ["◎", "Instagram", r.instagram_url],
+    ["♪", "TikTok", r.tiktok_url],
+  ].filter(([, , url]) => url);
+
   return (
     <footer className="site-footer">
       <div className="footer-main section-shell">
         <div className="footer-brand">
           <Brand />
-          <p>
-            Món ngon nóng hổi, nấu bằng cả tấm lòng và giao đến tận cửa nhà
-            bạn.
-          </p>
+          <p>{r.hero_subtitle}</p>
           <div className="social-links">
-            <a href="#visit" aria-label="Facebook">
-              f
-            </a>
-            <a href="#visit" aria-label="TikTok">
-              ♪
-            </a>
-            <a href="tel:0901234567" aria-label="Gọi điện">
+            {socials.map(([icon, label, url]) => (
+              <a
+                href={url}
+                aria-label={label}
+                key={label}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {icon}
+              </a>
+            ))}
+            <a
+              href={`tel:${(r.phone || "").replace(/\s/g, "")}`}
+              aria-label="Gọi điện"
+            >
               ☎
             </a>
           </div>
@@ -44,26 +56,18 @@ export default function SiteFooter() {
         </div>
         <div className="footer-column">
           <h3>Giờ mở cửa</h3>
-          <p>Thứ 2 – Chủ nhật</p>
-          <strong>10:00 – 21:30</strong>
+          <strong>{r.opening_hours}</strong>
           <p className="footer-note">Luôn sẵn sàng phục vụ món ngon!</p>
         </div>
         <div className="footer-column">
           <h3>Liên hệ</h3>
-          <p>
-            125 Nguyễn Tri Phương
-            <br />
-            P.7, Q.5, TP.HCM
-          </p>
-          <a href="tel:0901234567">090 123 4567</a>
-          <a href="#menu">Đặt món trực tuyến</a>
+          <p>{r.address}</p>
+          <a href={`tel:${(r.phone || "").replace(/\s/g, "")}`}>{r.phone}</a>
+          {r.email && <a href={`mailto:${r.email}`}>{r.email}</a>}
         </div>
       </div>
       <div className="footer-bottom section-shell">
-        <span>© 2026 Vĩnh Ký. Món ngon mỗi ngày.</span>
-        <span>
-          Được làm bằng cả tấm lòng tại Sài Gòn <b>♥</b>
-        </span>
+        <span>© {new Date().getFullYear()} {r.name}. Món ngon mỗi ngày.</span>
       </div>
     </footer>
   );

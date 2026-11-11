@@ -106,6 +106,10 @@ function Sidebar() {
           <Icon type='menu' />
           <span>Món ăn</span>
         </NavLink>
+        <NavLink to='/restaurant' className='nav-link'>
+          <Icon type='menu' />
+          <span>Thông tin nhà hàng</span>
+        </NavLink>
       </nav>
       <div className='sidebar-footer'>
         <span className='profile-avatar'>VK</span>

@@ -1,14 +1,31 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from services.cloudinary_upload import CloudinaryError, upload_image
+from services.customer_auth import (
+    create_token,
+    current_customer,
+    hash_password,
+    optional_customer,
+    verify_password,
+)
+from services import shipping
+from services.restaurant_settings import get_settings, save_settings
+
 from db import get_db
-from models.website import Category, Order, OrderItem, Product
+from models.website import Category, Customer, Order, OrderItem, Product
 from schemas.website import (
+    AuthResponse,
     CategoryIn,
     CategoryRead,
+    CustomerLogin,
+    CustomerRead,
+    CustomerRegister,
+    CustomerUpdate,
     OrderIn,
     OrderRead,
     OrderUpdate,
@@ -18,6 +35,18 @@ from schemas.website import (
 )
 
 router = APIRouter(prefix="/api", tags=["website"])
+
+
+class ImageUpload(BaseModel):
+    image: str
+
+
+@router.post("/uploads/image")
+def upload_image_endpoint(payload: ImageUpload):
+    try:
+        return {"url": upload_image(payload.image)}
+    except CloudinaryError as error:
+        raise HTTPException(status_code=502, detail=str(error))
 
 
 @router.get("/categories", response_model=List[CategoryRead])
@@ -107,20 +136,51 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
+class ShippingQuoteIn(BaseModel):
+    address: str
+
+
+@router.post("/shipping/quote")
+def shipping_quote(payload: ShippingQuoteIn, db: Session = Depends(get_db)):
+    try:
+        return shipping.quote(payload.address, get_settings(db)["address"])
+    except shipping.ShippingNotConfigured:
+        return {"distance_km": None, "fee": 0, "configured": False}
+    except shipping.ShippingError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+
 @router.post("/orders", response_model=OrderRead)
-def create_order(payload: OrderIn, db: Session = Depends(get_db)):
+def create_order(
+    payload: OrderIn,
+    db: Session = Depends(get_db),
+    customer: Optional[Customer] = Depends(optional_customer),
+):
     now = datetime.utcnow()
+    items = [OrderItem(**item.dict()) for item in payload.items]
+    try:
+        result = shipping.quote(payload.address, get_settings(db)["address"])
+        if result.get("out_of_range"):
+            raise HTTPException(status_code=400, detail="Địa chỉ trên 6 km, vui lòng đặt qua Grab.")
+        fee = result["fee"]
+    except shipping.ShippingNotConfigured:
+        fee = 0
+    except shipping.ShippingError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    if fee:
+        items.append(OrderItem(name="Phí giao hàng", price=fee, quantity=1))
     order = Order(
         code="TMP",
+        customer_id=customer.id if customer else None,
         customer_name=payload.customer_name.strip(),
         phone=payload.phone.strip(),
         address=payload.address.strip(),
         note=payload.note.strip(),
         payment_method=payload.payment_method,
-        payment_status=payload.payment_status,
-        total=sum(item.price * item.quantity for item in payload.items),
+        payment_status="unpaid",
+        total=sum(item.price * item.quantity for item in items),
         created_at=now,
-        items=[OrderItem(**item.dict()) for item in payload.items],
+        items=items,
     )
     db.add(order)
     db.flush()
@@ -128,6 +188,71 @@ def create_order(payload: OrderIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(order)
     return order
+
+
+@router.get("/orders/mine", response_model=List[OrderRead])
+def my_orders(customer: Customer = Depends(current_customer), db: Session = Depends(get_db)):
+    return (
+        db.query(Order)
+        .filter(Order.customer_id == customer.id)
+        .order_by(Order.id.desc())
+        .limit(50)
+        .all()
+    )
+
+
+@router.post("/auth/register", response_model=AuthResponse)
+def register(payload: CustomerRegister, db: Session = Depends(get_db)):
+    phone = payload.phone.strip()
+    if db.query(Customer).filter(Customer.phone == phone).first():
+        raise HTTPException(status_code=409, detail="Số điện thoại đã được đăng ký")
+    customer = Customer(
+        name=payload.name.strip(),
+        phone=phone,
+        email=payload.email.strip(),
+        password_hash=hash_password(payload.password),
+    )
+    db.add(customer)
+    db.commit()
+    db.refresh(customer)
+    return {"token": create_token(customer.id), "customer": customer}
+
+
+@router.post("/auth/login", response_model=AuthResponse)
+def login(payload: CustomerLogin, db: Session = Depends(get_db)):
+    customer = db.query(Customer).filter(Customer.phone == payload.phone.strip()).first()
+    if not customer or not verify_password(payload.password, customer.password_hash):
+        raise HTTPException(status_code=401, detail="Sai số điện thoại hoặc mật khẩu")
+    return {"token": create_token(customer.id), "customer": customer}
+
+
+@router.get("/auth/me", response_model=CustomerRead)
+def me(customer: Customer = Depends(current_customer)):
+    return customer
+
+
+@router.patch("/auth/me", response_model=CustomerRead)
+def update_me(
+    payload: CustomerUpdate,
+    customer: Customer = Depends(current_customer),
+    db: Session = Depends(get_db),
+):
+    for key, value in payload.dict(exclude_unset=True).items():
+        if value is not None:
+            setattr(customer, key, value.strip())
+    db.commit()
+    db.refresh(customer)
+    return customer
+
+
+@router.get("/restaurant")
+def get_restaurant(db: Session = Depends(get_db)):
+    return get_settings(db)
+
+
+@router.put("/restaurant")
+def update_restaurant(payload: Dict[str, str], db: Session = Depends(get_db)):
+    return save_settings(db, payload)
 
 
 @router.get("/orders", response_model=List[OrderRead])

@@ -44,6 +44,33 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
 
 
+class Customer(Base):
+    __tablename__ = "customers"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    phone = Column(String(40), unique=True, index=True, nullable=False)
+    email = Column(String(200), default="")
+    address = Column(Text, default="")
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class RestaurantSetting(Base):
+    __tablename__ = "restaurant_settings"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
+
+    key = Column(String(80), primary_key=True)
+    value = Column(LongText, default="")
+
+
 class Order(Base):
     __tablename__ = "orders"
     __table_args__ = {
@@ -52,6 +79,7 @@ class Order(Base):
     }
 
     id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, nullable=True, index=True)
     code = Column(String(32), unique=True, index=True)
     customer_name = Column(String(200), default="")
     phone = Column(String(40), default="")
